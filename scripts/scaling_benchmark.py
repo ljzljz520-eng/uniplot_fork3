@@ -21,27 +21,54 @@ times = []
 times_with_lines = []
 
 # Historical data
-historical_version = "v0.9.1"
-historical_sizes = [1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000]
+historical_versions = ["v0.9.1", "v0.21.5"]
+historical_sizes = [
+    [1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000],
+    [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000],
+]
 historical_times = [
-    0.014598846435546875,
-    0.016776084899902344,
-    0.010040044784545898,
-    0.010375261306762695,
-    0.0107879638671875,
-    0.018589019775390625,
-    0.06313228607177734,
-    0.6484909057617188,
+    [
+        0.014598846435546875,
+        0.016776084899902344,
+        0.010040044784545898,
+        0.010375261306762695,
+        0.0107879638671875,
+        0.018589019775390625,
+        0.06313228607177734,
+        0.6484909057617188,
+    ],
+    [
+        0.000801992416381836,
+        0.0008939266204833985,
+        0.001015949249267578,
+        0.0020066261291503905,
+        0.0010206222534179688,
+        0.0025086402893066406,
+        0.018438291549682618,
+        0.20454158782958984,
+    ],
 ]
 historical_times_with_lines = [
-    0.02862381935119629,
-    0.010422945022583008,
-    0.01305389404296875,
-    0.01655888557434082,
-    0.05128192901611328,
-    0.3673999309539795,
-    3.5426928997039795,
-    36.34388995170593,
+    [
+        0.02862381935119629,
+        0.010422945022583008,
+        0.01305389404296875,
+        0.01655888557434082,
+        0.05128192901611328,
+        0.3673999309539795,
+        3.5426928997039795,
+        36.34388995170593,
+    ],
+    [
+        0.0005467891693115235,
+        0.0006957530975341796,
+        0.0007099628448486329,
+        0.0016819000244140624,
+        0.005866622924804688,
+        0.04188065528869629,
+        0.39846138954162597,
+        4.205099248886109,
+    ],
 ]
 
 
@@ -75,11 +102,11 @@ print(f"times = {times}")
 print(f"times_with_lines = {times_with_lines}")
 
 results_plot(
-    xs=[historical_sizes, sizes],
-    ys=[historical_times, times],
+    xs=[*historical_sizes, sizes],
+    ys=[*historical_times, times],
     lines=True,
     title="Sample size versus plotting time, dots only, log-log",
-    legend_labels=[historical_version, "current"],
+    legend_labels=[*historical_versions, "current"],
     y_unit=" s",
     x_as_log=True,
     y_as_log=True,
@@ -89,11 +116,11 @@ results_plot(
 )
 
 results_plot(
-    xs=[historical_sizes, sizes],
-    ys=[historical_times_with_lines, times_with_lines],
+    xs=[*historical_sizes, sizes],
+    ys=[*historical_times_with_lines, times_with_lines],
     lines=True,
     title="Sample size versus plotting time, dots + lines, log-log",
-    legend_labels=[historical_version, "current"],
+    legend_labels=[*historical_versions, "current"],
     y_unit=" s",
     x_as_log=True,
     y_as_log=True,
