@@ -8,7 +8,6 @@ readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "numpy >=1.22.0",
-    "numba >=0.57.0",
     "readchar>=4.2.1",
 ]
 keywords = [
@@ -58,6 +57,9 @@ classifiers = [
     "Operating System :: OS Independent",
     "Environment :: Console",
 ]
+
+[project.optional-dependencies]
+fast = ["numba >=0.57.0"]
 
 [project.urls]
 Homepage = "https://github.com/olavolav/uniplot"

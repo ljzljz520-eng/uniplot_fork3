@@ -829,13 +829,17 @@ name = "uniplot"
 version = "0.21.5"
 source = { editable = "." }
 dependencies = [
-    { name = "numba", version = "0.58.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "numba", version = "0.60.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
-    { name = "numba", version = "0.64.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "numpy", version = "1.24.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
     { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "readchar" },
+]
+
+[package.optional-dependencies]
+fast = [
+    { name = "numba", version = "0.58.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "numba", version = "0.60.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
+    { name = "numba", version = "0.64.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 
 [package.dev-dependencies]
@@ -852,10 +856,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "numba", specifier = ">=0.57.0" },
+    { name = "numba", marker = "extra == 'fast'", specifier = ">=0.57.0" },
     { name = "numpy", specifier = ">=1.22.0" },
     { name = "readchar", specifier = ">=4.2.1" },
 ]
+provides-extras = ["fast"]
 
 [package.metadata.requires-dev]
 dev = [

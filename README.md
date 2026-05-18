@@ -275,6 +275,12 @@ Install via pip using:
 pip install uniplot
 ```
 
+For best performance with large datasets, install the optional Numba dependency:
+
+```shell
+pip install uniplot[fast]
+```
+
 
 ## Contributing
 
