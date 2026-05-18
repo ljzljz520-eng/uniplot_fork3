@@ -275,11 +275,13 @@ Install via pip using:
 pip install uniplot
 ```
 
-For best performance with large datasets, install the optional Numba dependency:
+For faster line rendering with very large datasets (1M+ points), install the optional Numba dependency:
 
 ```shell
 pip install uniplot[fast]
 ```
+
+Note: the first plot after installation (or after a Numba/Python upgrade) will take a few extra seconds to compile — subsequent calls reuse a disk cache and are fast.
 
 
 ## Contributing

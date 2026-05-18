@@ -285,21 +285,19 @@ except ImportError:
         if len(x0) == 0:
             return pixels
 
-        dx = x1 - x0
-        dy = y1 - y0
-        steep = np.abs(dy) > np.abs(dx)
+        steep = np.abs(y1 - y0) > np.abs(x1 - x0)
 
         all_x, all_y = [], []
 
         # Shallow lines
         mask = ~steep
         if np.any(mask):
-            x0s, x1s = x0[mask].copy(), x1[mask].copy()
-            y0s, y1s = y0[mask].copy(), y1[mask].copy()
+            x0s, x1s = x0[mask], x1[mask]
+            y0s, y1s = y0[mask], y1[mask]
 
             swap = x0s > x1s
-            x0s[swap], x1s[swap] = x1s[swap].copy(), x0s[swap].copy()
-            y0s[swap], y1s[swap] = y1s[swap].copy(), y0s[swap].copy()
+            x0s[swap], x1s[swap] = x1s[swap], x0s[swap]
+            y0s[swap], y1s[swap] = y1s[swap], y0s[swap]
 
             n = np.maximum(np.round(x1s - x0s).astype(int) + 1, 1)
             steps = np.arange(n.max())
@@ -312,8 +310,16 @@ except ImportError:
             t = (x_vals - x0s[:, None]) / safe_dx[:, None]
             y_vals = y0s[:, None] + t * (y1s - y0s)[:, None]
 
-            x_vals = np.clip(x_vals, np.minimum(x0s[:, None], x1s[:, None]), np.maximum(x0s[:, None], x1s[:, None]))
-            y_vals = np.clip(y_vals, np.minimum(y0s[:, None], y1s[:, None]), np.maximum(y0s[:, None], y1s[:, None]))
+            x_vals = np.clip(
+                x_vals,
+                np.minimum(x0s[:, None], x1s[:, None]),
+                np.maximum(x0s[:, None], x1s[:, None]),
+            )
+            y_vals = np.clip(
+                y_vals,
+                np.minimum(y0s[:, None], y1s[:, None]),
+                np.maximum(y0s[:, None], y1s[:, None]),
+            )
 
             all_x.append(x_vals[mask_steps])
             all_y.append(y_vals[mask_steps])
@@ -321,12 +327,12 @@ except ImportError:
         # Steep lines
         mask = steep
         if np.any(mask):
-            x0s, x1s = x0[mask].copy(), x1[mask].copy()
-            y0s, y1s = y0[mask].copy(), y1[mask].copy()
+            x0s, x1s = x0[mask], x1[mask]
+            y0s, y1s = y0[mask], y1[mask]
 
             swap = y0s > y1s
-            x0s[swap], x1s[swap] = x1s[swap].copy(), x0s[swap].copy()
-            y0s[swap], y1s[swap] = y1s[swap].copy(), y0s[swap].copy()
+            x0s[swap], x1s[swap] = x1s[swap], x0s[swap]
+            y0s[swap], y1s[swap] = y1s[swap], y0s[swap]
 
             n = np.maximum(np.round(y1s - y0s).astype(int) + 1, 1)
             steps = np.arange(n.max())
@@ -339,8 +345,16 @@ except ImportError:
             t = (y_vals - y0s[:, None]) / safe_dy[:, None]
             x_vals = x0s[:, None] + t * (x1s - x0s)[:, None]
 
-            y_vals = np.clip(y_vals, np.minimum(y0s[:, None], y1s[:, None]), np.maximum(y0s[:, None], y1s[:, None]))
-            x_vals = np.clip(x_vals, np.minimum(x0s[:, None], x1s[:, None]), np.maximum(x0s[:, None], x1s[:, None]))
+            y_vals = np.clip(
+                y_vals,
+                np.minimum(y0s[:, None], y1s[:, None]),
+                np.maximum(y0s[:, None], y1s[:, None]),
+            )
+            x_vals = np.clip(
+                x_vals,
+                np.minimum(x0s[:, None], x1s[:, None]),
+                np.maximum(x0s[:, None], x1s[:, None]),
+            )
 
             all_x.append(x_vals[mask_steps])
             all_y.append(y_vals[mask_steps])
