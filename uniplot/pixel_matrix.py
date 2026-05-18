@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 from typing import Optional, Final
+from numba import njit  # type: ignore
 
 
 BATCH_SIZE: Final = 10_000
@@ -137,6 +138,7 @@ def _render_batch_of_dots(
     return pixels
 
 
+@njit(cache=True, fastmath=True, parallel=True)
 def _render_batch_of_lines(
     xs: NDArray,
     ys: NDArray,
@@ -165,90 +167,93 @@ def _render_batch_of_lines(
     x0, x1 = x0[valid], x1[valid]
     y0, y1 = y0[valid], y1[valid]
 
+    if len(x0) == 0:
+        return pixels
+
     dx = x1 - x0
     dy = y1 - y0
     steep = np.abs(dy) > np.abs(dx)
 
-    all_x, all_y = [], []
+    # Calculate total pixels needed (exact allocation)
+    total_pixels = 0
+    for i in range(len(x0)):
+        if steep[i]:
+            n = max(1, int(np.round(abs(y1[i] - y0[i]))) + 1)
+        else:
+            n = max(1, int(np.round(abs(x1[i] - x0[i]))) + 1)
+        total_pixels += n
 
-    # Shallow lines
-    mask = ~steep
-    if np.any(mask):
-        x0s, x1s = x0[mask], x1[mask]
-        y0s, y1s = y0[mask], y1[mask]
+    # Allocate exact size arrays
+    x_all = np.empty(total_pixels, dtype=np.float64)
+    y_all = np.empty(total_pixels, dtype=np.float64)
 
-        swap = x0s > x1s
-        x0s[swap], x1s[swap] = x1s[swap], x0s[swap]
-        y0s[swap], y1s[swap] = y1s[swap], y0s[swap]
+    # Generate all pixels using nested loops
+    idx = 0
+    for i in range(len(x0)):
+        x_start, x_end = x0[i], x1[i]
+        y_start, y_end = y0[i], y1[i]
 
-        n = np.maximum(np.round(x1s - x0s).astype(int) + 1, 1)
-        steps = np.arange(n.max())
-        steps = steps[None, :] * np.ones((len(n), 1))
-        mask_steps = steps < n[:, None]
+        if steep[i]:
+            # Steep line: iterate along y-axis
+            # Ensure y_start < y_end for consistent direction
+            if y_start > y_end:
+                y_start, y_end = y_end, y_start
+                x_start, x_end = x_end, x_start
 
-        x_vals = np.round(x0s)[:, None] + steps
-        safe_dx = x1s - x0s
-        safe_dx[safe_dx == 0] = 1
-        t = (x_vals - x0s[:, None]) / safe_dx[:, None]
-        y_vals = y0s[:, None] + t * (y1s - y0s)[:, None]
+            n = max(1, int(np.round(y_end - y_start)) + 1)
+            y_base = np.round(y_start)
 
-        x_vals = np.clip(
-            x_vals,
-            np.minimum(x0s[:, None], x1s[:, None]),
-            np.maximum(x0s[:, None], x1s[:, None]),
-        )
-        y_vals = np.clip(
-            y_vals,
-            np.minimum(y0s[:, None], y1s[:, None]),
-            np.maximum(y0s[:, None], y1s[:, None]),
-        )
+            for step in range(n):
+                y_val = y_base + step
+                # Calculate t parameter for interpolation
+                safe_dy = y_end - y_start
+                if abs(safe_dy) < 1e-10:
+                    safe_dy = 1.0
+                t = (y_val - y_start) / safe_dy
+                x_val = x_start + t * (x_end - x_start)
 
-        all_x.append(x_vals[mask_steps])
-        all_y.append(y_vals[mask_steps])
+                # Clipping
+                y_val = max(min(y_val, max(y_start, y_end)), min(y_start, y_end))
+                x_val = max(min(x_val, max(x_start, x_end)), min(x_start, x_end))
 
-    # Steep lines
-    mask = steep
-    if np.any(mask):
-        x0s, x1s = x0[mask], x1[mask]
-        y0s, y1s = y0[mask], y1[mask]
+                x_all[idx] = x_val
+                y_all[idx] = y_val
+                idx += 1
+        else:
+            # Shallow line: iterate along x-axis
+            # Ensure x_start < x_end for consistent direction
+            if x_start > x_end:
+                x_start, x_end = x_end, x_start
+                y_start, y_end = y_end, y_start
 
-        swap = y0s > y1s
-        x0s[swap], x1s[swap] = x1s[swap], x0s[swap]
-        y0s[swap], y1s[swap] = y1s[swap], y0s[swap]
+            n = max(1, int(np.round(x_end - x_start)) + 1)
+            x_base = np.round(x_start)
 
-        n = np.maximum(np.round(y1s - y0s).astype(int) + 1, 1)
-        steps = np.arange(n.max())
-        steps = steps[None, :] * np.ones((len(n), 1))
-        mask_steps = steps < n[:, None]
+            for step in range(n):
+                x_val = x_base + step
+                # Calculate t parameter for interpolation
+                safe_dx = x_end - x_start
+                if abs(safe_dx) < 1e-10:
+                    safe_dx = 1.0
+                t = (x_val - x_start) / safe_dx
+                y_val = y_start + t * (y_end - y_start)
 
-        y_vals = np.round(y0s)[:, None] + steps
-        safe_dy = y1s - y0s
-        safe_dy[safe_dy == 0] = 1
-        t = (y_vals - y0s[:, None]) / safe_dy[:, None]
-        x_vals = x0s[:, None] + t * (x1s - x0s)[:, None]
+                # Clipping
+                x_val = max(min(x_val, max(x_start, x_end)), min(x_start, x_end))
+                y_val = max(min(y_val, max(y_start, y_end)), min(y_start, y_end))
 
-        y_vals = np.clip(
-            y_vals,
-            np.minimum(y0s[:, None], y1s[:, None]),
-            np.maximum(y0s[:, None], y1s[:, None]),
-        )
-        x_vals = np.clip(
-            x_vals,
-            np.minimum(x0s[:, None], x1s[:, None]),
-            np.maximum(x0s[:, None], x1s[:, None]),
-        )
+                x_all[idx] = x_val
+                y_all[idx] = y_val
+                idx += 1
 
-        all_x.append(x_vals[mask_steps])
-        all_y.append(y_vals[mask_steps])
+    # Round and convert to integer pixel coordinates
+    x_all = np.round(x_all).astype(np.int64)  # type: ignore
+    y_all = np.round(y_all).astype(np.int64)  # type: ignore
+    y_all = height - 1 - y_all  # Flip Y for image coordinates
 
-    if not all_x:
-        return pixels
-
-    x_all = np.round(np.concatenate(all_x)).astype(int)
-    y_all = np.round(np.concatenate(all_y)).astype(int)
-    y_all = height - 1 - y_all
-
-    valid = (x_all >= 0) & (x_all < width) & (y_all >= 0) & (y_all < height)
-    pixels[y_all[valid], x_all[valid]] = layer
+    # Write pixels with bounds checking
+    for i in range(len(x_all)):
+        if 0 <= x_all[i] < width and 0 <= y_all[i] < height:
+            pixels[y_all[i], x_all[i]] = layer
 
     return pixels
