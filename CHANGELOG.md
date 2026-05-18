@@ -5,6 +5,38 @@ All notable changes to uniplot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-05-18
+### Added
+- 3-5x speed improvement when plotting 1M+ lines using
+  [Numba JIT compilation](https://numba.pydata.org/). Numba is an optional
+  dependency, that can be installed using `pip install uniplot[fast]`.
+
+```
+             ++ v0.9.1   xx v0.21.5   oo current
+   Sample size versus plotting time, dots + lines, log-log
+┌────────────────────────────────────────────────────────────┐
+│                                                          ++│
+│                                                        ++  │
+│                                                     +++    │
+│                                                  +++     xx│
+│                                                ++      xx  │
+│                                             +++     xxx   o│ 1 s
+│                                          +++      xx    oo │
+│───────────────────────────────────────+++──────xxx───ooo───│
+│                                    +++      xxx   ooo      │
+│                                ++++      xxx    ooo        │
+│++++                       +++++       xxxx   ooo           │
+│    +++++++++++++++++++++++         xxx    ooo              │
+│                                 xxx    ooo                 │ 10^-2 s
+│                            xxxxx    ooo                    │
+│                      xxxxxx   oooooo                       │
+│ xxxooooooooooooooooooooooooooo                             │
+│oooo                                                        │
+└────────────────────────────────────────────────────────────┘
+ 1               100             10^4             10^6
+             ++ v0.9.1   xx v0.21.5   oo v0.22.0
+```
+
 ## [0.21.5] - 2026-01-04
 ### Added
 - Python 3.14 to the CI pipeline.
