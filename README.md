@@ -7,14 +7,24 @@ Lightweight plotting to the terminal. 4x resolution via Unicode.
 
 ![uniplot demo GIF](https://github.com/olavolav/uniplot/raw/master/resource/uniplot-demo.gif)
 
-When working with production data science code it can be handy to have plotting
-tool that does not rely on graphics dependencies or works only in a Jupyter
-notebook.
+When working with production data science code it can be handy to have a
+plotting tool that does not rely on graphics dependencies or works only in a
+Jupyter notebook.
 
-The **use case** that this was built for is to have plots as part of your data
-science / machine learning CI/CD pipeline - that way whenever something goes
-wrong, you get not only the error and backtrace but also plots that show what
-the problem was.
+There are two main use cases:
+
+1. **ML / data science CI/CD pipelines** — when something goes wrong, you get
+   not only the error and backtrace but also plots that show what the problem
+   was.
+2. **AI coding agents like [Claude Code](https://claude.com/claude-code)** —
+   uniplot output is plain terminal text, which works in both directions: the
+   agent can render plots back to *you* as visual feedback inside its response
+   (e.g. summarising a parameter scan across pipeline runs, or showing how a
+   return variable changes), and it can also read its own plots to reason
+   about shapes, trends and outliers. With `uv` no install step is needed:
+   ```shell
+   uv run --with uniplot python -c "from uniplot import plot; ys = [1, 4, 16]; plot(ys)"
+   ```
 
 
 ## Features
