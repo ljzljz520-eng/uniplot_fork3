@@ -5,6 +5,11 @@ All notable changes to uniplot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Fixed
+- Upgraded dependencies to resolve dependabot warning on pytest /
+  CVE-2025-71176. This only affects uniplot developers, not users.
+
 ## [0.22.0] - 2026-05-18
 ### Added
 - 3-5x speed improvement when plotting 1M+ lines using
