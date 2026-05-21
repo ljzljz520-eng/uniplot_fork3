@@ -51,7 +51,7 @@ def extended_talbot_labels(
                 step_size = q * j
 
                 labels = np.arange(
-                    start=label_start,
+                    label_start,
                     stop=x_max,
                     step=step_size * 10**exponent,
                 )

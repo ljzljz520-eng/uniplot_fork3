@@ -154,7 +154,7 @@ def _label_range(start, stop, step_count: int, step_unit: str) -> NDArray:
     # For units where the step size is an equal amount of seconds
     if step_unit not in ["Y", "M"]:
         step_size = _timedelta(step_count, step_unit)
-        return np.arange(start=start, stop=stop, step=step_size)
+        return np.arange(start, stop=stop, step=step_size)
 
     # Otherwise, manually construct the list
     ls = [start]
