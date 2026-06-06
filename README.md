@@ -18,7 +18,7 @@ There are two main use cases:
    was.
 2. **AI coding agents like [Claude Code](https://claude.com/claude-code)** —
    uniplot output is plain terminal text, which works in both directions: the
-   agent can render plots back to *you* as visual feedback inside its response
+   agent can render plots back to you as visual feedback inside its response
    (e.g. summarising a parameter scan across pipeline runs, or showing how a
    return variable changes), and it can also read its own plots to reason
    about shapes, trends and outliers. With `uv` no install step is needed:
