@@ -34,6 +34,9 @@ There are two main use cases:
 * Super simple API
 * Interactive mode (pass `interactive=True`)
 * Color mode (pass `color=True`) useful in particular when plotting multiple series
+* Works directly with the data ecosystem you already use: NumPy, pandas and Polars
+* Integrates with [Rich](https://github.com/Textualize/rich): print plots inside
+  panels, columns and dashboards (see below)
 * It's fast: Plotting 1M data points takes 26ms thanks to NumPy magic
 
 Please note that Unicode drawing will work correctly only when using a font
@@ -277,6 +280,39 @@ while True:
 See `examples/5-streaming.py` for a more complete example.
 
 
+## Rich integration
+
+uniplot plots are [Rich](https://github.com/Textualize/rich) renderables. Pass a
+`plot_gen` object straight to a Rich `Console`, or embed it in any Rich
+container such as `Panel`, `Group` or `Columns`. Colors are preserved and the
+plot fits the width Rich allocates, so it sits cleanly inside layouts and
+dashboards.
+
+```python
+from rich.console import Console
+from rich.panel import Panel
+from uniplot import plot_gen
+
+console = Console()
+
+# Print a plot directly ...
+console.print(plot_gen(ys=[1, 2, 4, 3], title="My plot"))
+
+# ... or embed it in any Rich container.
+console.print(Panel(plot_gen(ys=[1, 2, 4, 3]), title="Wrapped in Rich"))
+```
+
+This makes uniplot a natural fit for Rich-based CLIs, monitoring dashboards and
+agent tooling. Rich is an optional dependency — install it with:
+
+```shell
+pip install uniplot[rich]
+```
+
+See `examples/10-rich_integration.py` for a fuller demo including colored
+multi-series plots and a multi-column layout.
+
+
 ## Installation
 
 Install via pip using:
@@ -292,6 +328,12 @@ pip install uniplot[fast]
 ```
 
 Note: the first plot after installation (or after a Numba/Python upgrade) will take a few extra seconds to compile — subsequent calls reuse a disk cache and are fast.
+
+For the [Rich](https://github.com/Textualize/rich) integration, install the optional Rich dependency:
+
+```shell
+pip install uniplot[rich]
+```
 
 
 ## Contributing

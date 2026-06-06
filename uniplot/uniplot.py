@@ -1,11 +1,16 @@
-from typing import List, Dict, Optional, Final, Any
+from typing import List, Dict, Optional, Final, Any, TYPE_CHECKING
 from readchar import readkey, key
 
 from uniplot.multi_series import MultiSeries
 from uniplot.options import Options
 from uniplot.param_initializer import validate_and_transform_options
+import uniplot.colors as colors
 import uniplot.sections as sections
 import uniplot.plot_elements as elements
+
+if TYPE_CHECKING:
+    from rich.console import Console, ConsoleOptions, RenderResult
+    from rich.measure import Measurement
 
 
 def plot(ys: Any, xs: Optional[Any] = None, **kwargs) -> None:
@@ -119,6 +124,77 @@ class plot_gen:
     def print_subscript(self, text: str) -> None:
         self.last_nr_of_lines += elements.count_lines(text)
         print(text)
+
+    def _render_to_string(self, max_width: Optional[int] = None) -> str:
+        """
+        Render the current plot to a string without printing or erasing, and
+        without permanently mutating the options.
+
+        If `max_width` is given, the total line length is constrained to it via
+        the existing `line_length_hard_cap` mechanism (combined with any cap the
+        user already set). This is what makes the plot fit the space Rich
+        allocates.
+        """
+        saved_cap = self.options.line_length_hard_cap
+        try:
+            if max_width is not None:
+                self.options.line_length_hard_cap = (
+                    max_width if saved_cap is None else min(saved_cap, max_width)
+                )
+            header_buffer = sections.generate_header(self.options)
+            (
+                x_axis_labels,
+                y_axis_labels,
+                pixel_character_matrix,
+            ) = sections.generate_body_raw_elements(self.series, self.options)
+            body_buffer = sections.generate_body(
+                x_axis_labels, y_axis_labels, pixel_character_matrix, self.options
+            )
+            return "\n".join(header_buffer + body_buffer)
+        finally:
+            # Restore the options to their pre-render state. The cap logic in
+            # `sections` mutates `width`, so reset both.
+            self.options.line_length_hard_cap = saved_cap
+            self.options.reset_width()
+
+    def __rich_console__(
+        self, console: "Console", options: "ConsoleOptions"
+    ) -> "RenderResult":
+        """
+        Rich renderable protocol. Allows `console.print(plot_gen(ys=...))` and
+        embedding plots in Rich containers such as `Panel`, `Group`, `Columns`.
+
+        Requires the optional `rich` dependency: `pip install uniplot[rich]`.
+        """
+        try:
+            from rich.text import Text
+        except ImportError as e:  # pragma: no cover - exercised via monkeypatch
+            raise ImportError(
+                "Rich integration requires the 'rich' package. "
+                "Install it with:  pip install uniplot[rich]"
+            ) from e
+
+        plot_string = self._render_to_string(max_width=options.max_width)
+        # `from_ansi` parses uniplot's ANSI color codes into native Rich styling,
+        # so colors are preserved and no raw escape sequences leak into output.
+        yield Text.from_ansi(plot_string)
+
+    def __rich_measure__(
+        self, console: "Console", options: "ConsoleOptions"
+    ) -> "Measurement":
+        """
+        Report the plot's width to Rich so layouts (e.g. `Columns`, tables) can
+        size it correctly.
+        """
+        from rich.measure import Measurement
+
+        plot_string = self._render_to_string(max_width=options.max_width)
+        widths = [
+            len(colors.COLOR_CODE_REGEX.sub("", line))
+            for line in plot_string.split("\n")
+        ]
+        natural = max(widths) if widths else 0
+        return Measurement(min(natural, options.max_width), natural)
 
 
 def plot_to_string(ys: Any, xs: Optional[Any] = None, **kwargs) -> str:

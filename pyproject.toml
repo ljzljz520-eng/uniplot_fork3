@@ -60,6 +60,7 @@ classifiers = [
 
 [project.optional-dependencies]
 fast = ["numba >=0.57.0"]
+rich = ["rich >=13.0"]
 
 [project.urls]
 Homepage = "https://github.com/olavolav/uniplot"
@@ -74,6 +75,7 @@ dev = [
     "polars >=0.20.5",
     "ruff >=0.9.0",
     "pyinstrument>=5.0.3",
+    "rich>=14.3.4",
 ]
 
 [tool.uv]
