@@ -11,7 +11,11 @@ from uniplot.legend_placements import LegendPlacement
 AUTO_WINDOW_ENLARGE_FACTOR = 0.001
 
 
-def validate_and_transform_options(series: MultiSeries, kwargs: Dict = {}) -> Options:
+def validate_and_transform_options(
+    series: MultiSeries,
+    kwargs: Dict = {},
+    bounds_already_in_plot_space: frozenset = frozenset(),
+) -> Options:
     """
     This will check the keyword arguments passed to the `uniplot.plot`
     function, will transform them and will return them in form of an `Options`
@@ -23,6 +27,11 @@ def validate_and_transform_options(series: MultiSeries, kwargs: Dict = {}) -> Op
 
     As a result the somewhat hacky code below should at least be confined to
     this function, and not spread throughout uniplot.
+
+    `bounds_already_in_plot_space` is for internal use by `plot_gen`: it lists
+    the bound keys (a subset of `x_min`/`x_max`/`y_min`/`y_max`) whose values
+    are already in plot space, i.e. pinned bounds that were re-injected from a
+    previous render. For those we must not apply the `log10` transform again.
     """
     # First, some cleanup, including converting datetimes to float
     for key in ["x_min", "x_max", "y_min", "y_max"]:
@@ -41,9 +50,9 @@ def validate_and_transform_options(series: MultiSeries, kwargs: Dict = {}) -> Op
             kwargs["x_gridlines"] = []
         else:
             kwargs["x_gridlines"] = list(np.log10(np.array(kwargs["x_gridlines"])))
-        if kwargs.get("x_min"):
+        if kwargs.get("x_min") and "x_min" not in bounds_already_in_plot_space:
             kwargs["x_min"] = np.log10(kwargs["x_min"])
-        if kwargs.get("x_max"):
+        if kwargs.get("x_max") and "x_max" not in bounds_already_in_plot_space:
             kwargs["x_max"] = np.log10(kwargs["x_max"])
     if kwargs.get("y_as_log"):
         series.set_y_axis_to_log10()
@@ -51,9 +60,9 @@ def validate_and_transform_options(series: MultiSeries, kwargs: Dict = {}) -> Op
             kwargs["y_gridlines"] = []
         else:
             kwargs["y_gridlines"] = list(np.log10(np.array(kwargs["y_gridlines"])))
-        if kwargs.get("y_min"):
+        if kwargs.get("y_min") and "y_min" not in bounds_already_in_plot_space:
             kwargs["y_min"] = np.log10(kwargs["y_min"])
-        if kwargs.get("y_max"):
+        if kwargs.get("y_max") and "y_max" not in bounds_already_in_plot_space:
             kwargs["y_max"] = np.log10(kwargs["y_max"])
 
     # Colors of gridlines

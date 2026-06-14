@@ -34,9 +34,11 @@ There are two main use cases:
 * Super simple API
 * Interactive mode (pass `interactive=True`)
 * Color mode (pass `color=True`) useful in particular when plotting multiple series
-* Works directly with the data ecosystem you already use: NumPy, pandas and Polars
-* Integrates with [Rich](https://github.com/Textualize/rich): print plots inside
-  panels, columns and dashboards (see below)
+* Works directly with the data ecosystem you already use:
+  [NumPy](https://numpy.org), [pandas](https://pandas.pydata.org) and
+  [Polars](https://pola.rs)
+* Integrates with [Rich](https://github.com/Textualize/rich): embed plots in panels,
+  columns and live-updating dashboards (see below)
 * It's fast: Plotting 1M data points takes 26ms thanks to NumPy magic
 
 Please note that Unicode drawing will work correctly only when using a font
@@ -260,9 +262,9 @@ the arrow keys. Arrows should work on most platforms like Mac, Linux or Windows.
 
 ### Streaming
 
-There is initial support for streaming using the `plot_gen` function. The idea
-is have a class that wraps the plot function and the state of plotting, such
-that we can `update` the state of the plot.
+There is support for streaming using the `plot_gen` class. It wraps the plot
+function and holds the plotting state, so you can `update` it with new data and
+have it re-drawn in place.
 
 Example, assuming we had a function called `get_new_data` to get new data from
 some source:
@@ -276,6 +278,15 @@ while True:
     ys.append(get_new_data())
     plt.update(ys=ys, title=f"Streaming: {len(ys)} data point(s) ...")
 ```
+
+Each `update()` re-draws from the current state. Any bound you set explicitly
+(e.g. `y_min=-1, y_max=1`) — or via interactive pan/zoom — is *pinned* and kept
+across updates, while all other bounds keep auto-ranging to fit the new data.
+Other options (such as `title`, `color`, `lines`) persist across updates too, so
+you only need to pass them once.
+
+`update()` returns the rendered string as well. If you only want the string (no
+printing), use `plt.to_string()` or the `plot_to_string()` function.
 
 See `examples/5-streaming.py` for a more complete example.
 
@@ -311,6 +322,30 @@ pip install uniplot[rich]
 
 See `examples/10-rich_integration.py` for a fuller demo including colored
 multi-series plots and a multi-column layout.
+
+#### Live updates
+
+For a smoothly updating display, drive a plot with `rich.live.Live`. Feed new
+data with the thread-safe `set_data()` (which updates state without printing)
+and let Rich re-render on its own schedule. A fast producer and a slower refresh
+rate decouple cleanly — updates between two refreshes simply coalesce into one
+render:
+
+```python
+import math, time
+from rich.live import Live
+from uniplot import plot_gen
+
+plt = plot_gen(lines=True, y_min=-1.2, y_max=1.2, title="Live sine")
+ys = []
+with Live(plt, refresh_per_second=10) as live:
+    for i in range(400):
+        ys.append(math.sin(i / 10))
+        plt.set_data(ys=ys[-100:])   # high-rate updates; no printing
+        time.sleep(0.005)
+```
+
+See `examples/11-rich_live.py`.
 
 
 ## Installation

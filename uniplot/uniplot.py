@@ -1,4 +1,5 @@
-from typing import List, Dict, Optional, Final, Any, TYPE_CHECKING
+import threading
+from typing import Dict, Optional, Final, Any, Tuple, TYPE_CHECKING
 from readchar import readkey, key
 
 from uniplot.multi_series import MultiSeries
@@ -11,6 +12,11 @@ import uniplot.plot_elements as elements
 if TYPE_CHECKING:
     from rich.console import Console, ConsoleOptions, RenderResult
     from rich.measure import Measurement
+
+# The four view-window bounds, tracked separately from other options because
+# they can be "pinned" (preserved across updates) by an explicit option or by
+# interactive pan/zoom, while everything else auto-ranges from the data.
+_BOUND_KEYS: Final[Tuple[str, ...]] = ("x_min", "x_max", "y_min", "y_max")
 
 
 def plot(ys: Any, xs: Optional[Any] = None, **kwargs) -> None:
@@ -27,33 +33,45 @@ def plot(ys: Any, xs: Optional[Any] = None, **kwargs) -> None:
     - Any additional keyword arguments are passed to the
       `uniplot.options.Options` class.
     """
-    plt = plot_gen(xs=xs, ys=ys, **kwargs)
+    plt = plot_gen()
 
     # Main loop for interactive mode. Will only be executed once when not in
-    # interactive mode.
+    # interactive mode. The data is supplied on the first iteration only, so it
+    # is processed exactly once; later iterations just re-render the view.
     first_iteration: bool = True
     while first_iteration or plt.options.interactive:
-        plt.update()
+        if first_iteration:
+            plt.update(xs=xs, ys=ys, **kwargs)
+        else:
+            plt.update()
 
         if plt.options.interactive:
             plt.print_subscript("Move h/j/k/l, zoom u/n, or r to reset. q to quit.")
             key_pressed = readkey()
 
-            # Here we support 3 ways to move: Vim-style, arrow keys and FPS-style
+            # Here we support 3 ways to move: Vim-style, arrow keys and FPS-style.
+            # Panning/zooming pins the affected bounds, so they are preserved on
+            # the next `update()` instead of being auto-ranged away.
             if key_pressed in ["h", key.LEFT, "a"]:
                 plt.options.shift_view_left()
+                plt._pinned_bounds |= {"x_min", "x_max"}
             elif key_pressed in ["l", key.RIGHT, "d"]:
                 plt.options.shift_view_right()
+                plt._pinned_bounds |= {"x_min", "x_max"}
             elif key_pressed in ["j", key.DOWN, "s"]:
                 plt.options.shift_view_down()
+                plt._pinned_bounds |= {"y_min", "y_max"}
             elif key_pressed in ["k", key.UP, "w"]:
                 plt.options.shift_view_up()
+                plt._pinned_bounds |= {"y_min", "y_max"}
             elif key_pressed in ["u", "]"]:
                 plt.options.zoom_in()
+                plt._pinned_bounds |= set(_BOUND_KEYS)
             elif key_pressed in ["n", "["]:
                 plt.options.zoom_out()
+                plt._pinned_bounds |= set(_BOUND_KEYS)
             elif key_pressed == "r":
-                plt.options.reset_view()
+                plt.reset_view()
             elif key_pressed in ["q", "Q", key.ESC]:
                 break
 
@@ -61,101 +79,221 @@ def plot(ys: Any, xs: Optional[Any] = None, **kwargs) -> None:
 
 
 class plot_gen:
-    def __init__(self, return_string=False, **kwargs) -> None:
-        self.default_arguments: Final[Dict] = kwargs
-        self.last_nr_of_lines: int = 0
-        self.return_string: Final[bool] = return_string
+    """
+    Stateful plot object, used for streaming, repeated updates and as a Rich
+    renderable.
+
+    Every `update()` re-draws from scratch (relying on caching).
+    The only state kept is the
+    data, the options, which view bounds are "pinned", the accumulated non-data
+    options, and the number of lines last printed (so the previous frame can be
+    erased).
+    """
+
+    def __init__(self, **kwargs) -> None:
         self.series: MultiSeries = MultiSeries([])
         self.options: Options = Options()
-        if "ys" in kwargs:
-            self.series = MultiSeries(xs=kwargs.get("xs"), ys=kwargs.get("ys", []))
-            if "xs" in kwargs:
-                del kwargs["xs"]
-            del kwargs["ys"]
-            self.options = validate_and_transform_options(
-                series=self.series, kwargs=kwargs
-            )
+        # The raw, untransformed data as last supplied by the user. The series
+        # is rebuilt from this on every render so that in-place transforms in
+        # the validator (e.g. log scaling) are applied exactly once instead of
+        # being compounded across updates.
+        self._raw_xs: Any = None
+        self._raw_ys: Any = None
+        # Bound keys (subset of `_BOUND_KEYS`) that should be preserved across
+        # updates rather than auto-ranged.
+        self._pinned_bounds: set = set()
+        # Explicit bound values supplied but not yet applied (carried across
+        # coalesced updates until the next recompute).
+        self._pending_bound_values: Dict = {}
+        # Non-data, non-bound options that persist across updates (e.g. `title`,
+        # `color`, `lines`, `width`), so a data-only `update(ys=...)` keeps them.
+        self._option_kwargs: Dict = {}
+        # Whether new data/options have been ingested since the last recompute.
+        self._dirty: bool = False
+        self.last_nr_of_lines: int = 0
+        # Guards ingestion against rendering, so the object is safe to use with
+        # `rich.live.Live` (which renders on a background thread while the
+        # producer calls `set_data`). Ingestion is intentionally cheap, so a
+        # high-rate producer cannot starve the renderer.
+        self._lock = threading.Lock()
+        if kwargs:
+            self._ingest(kwargs)
 
-    def update(self, **kwargs) -> Optional[str]:
-        header_buffer: List[str] = []
-        body_buffer: List[str] = []
-
-        full_kwargs = {**self.default_arguments, **kwargs}
-
-        if "xs" in kwargs or "ys" in kwargs:
-            self.series = MultiSeries(
-                xs=full_kwargs.get("xs"), ys=full_kwargs.get("ys")
-            )
-        if len(kwargs.keys()) > 0 or self.options is None:
-            # New options provided, so regenerate `self.options`
-            # NOTE This overwrites the view window if not supplied explicitely
-            if "xs" in full_kwargs:
-                del full_kwargs["xs"]
-            del full_kwargs["ys"]
-            self.options = validate_and_transform_options(
-                series=self.series, kwargs=full_kwargs
-            )
-
-        header_buffer = sections.generate_header(self.options)
-
-        # Generate and collect plot content
-        body_buffer = []
-        (
-            x_axis_labels,
-            y_axis_labels,
-            pixel_character_matrix,
-        ) = sections.generate_body_raw_elements(self.series, self.options)
-        body_buffer += sections.generate_body(
-            x_axis_labels, y_axis_labels, pixel_character_matrix, self.options
-        )
-
-        # Delete plot before we re-draw
-        if not self.return_string:
-            elements.erase_previous_lines(self.last_nr_of_lines)
-
-        # Output plot
-        output = "\n".join(header_buffer + body_buffer)
+    def update(self, **kwargs) -> str:
+        """
+        Apply any new data/options, then re-draw in place on the terminal
+        (erasing the previous frame). Returns the rendered string as well, so it
+        can also be captured (e.g. for logging).
+        """
+        self._ingest(kwargs)
+        output = self._render()
+        elements.erase_previous_lines(self.last_nr_of_lines)
         self.last_nr_of_lines = elements.count_lines(output)
-        if self.return_string:
-            return output
         print(output)
-        return None
+        return output
+
+    def set_data(self, **kwargs) -> None:
+        """
+        Record new data/options without rendering or printing. Intended for use
+        with `rich.live.Live`, where Rich owns the screen and re-renders the
+        object on its own schedule; the (potentially expensive) recompute then
+        happens once per rendered frame rather than once per call.
+
+        Note that `self.options` reflects the new data only after the next
+        render (e.g. via `to_string()` or a `Live` refresh).
+        """
+        self._ingest(kwargs)
+
+    def to_string(self, max_width: Optional[int] = None) -> str:
+        """
+        Return the current plot as a string, without printing.
+        """
+        return self._render(max_width)
+
+    def reset_view(self) -> None:
+        """
+        Reset the view window to its initial bounds and clear all pins, so
+        subsequent renders auto-range again.
+        """
+        with self._lock:
+            self.options.reset_view()
+            self._pinned_bounds.clear()
+            self._pending_bound_values.clear()
+            self._dirty = True
 
     def print_subscript(self, text: str) -> None:
         self.last_nr_of_lines += elements.count_lines(text)
         print(text)
 
-    def _render_to_string(self, max_width: Optional[int] = None) -> str:
+    def _ingest(self, kwargs: Dict) -> None:
         """
-        Render the current plot to a string without printing or erasing, and
-        without permanently mutating the options.
+        Record new data/options cheaply and mark the plot dirty. The expensive
+        recompute is deferred to the next render (`_recompute`), so a high-rate
+        producer does not starve the renderer and the heavy work runs once per
+        rendered frame rather than once per update.
+        """
+        with self._lock:
+            kwargs = dict(kwargs)
+            has_ys = "ys" in kwargs
+            xs = kwargs.pop("xs", None)
+            ys = kwargs.pop("ys", None)
 
-        If `max_width` is given, the total line length is constrained to it via
-        the existing `line_length_hard_cap` mechanism (combined with any cap the
-        user already set). This is what makes the plot fit the space Rich
-        allocates.
+            # Remember the raw data so the series can be rebuilt from scratch at
+            # render time (only `ys` triggers a data change; a lone `xs` is
+            # ignored, matching the documented streaming contract).
+            if has_ys:
+                self._raw_xs = xs
+                self._raw_ys = ys
+
+            # Pin any explicitly-passed bounds; accumulate all other options.
+            for k, v in kwargs.items():
+                if k in _BOUND_KEYS:
+                    self._pinned_bounds.add(k)
+                    self._pending_bound_values[k] = v
+                else:
+                    self._option_kwargs[k] = v
+
+            self._dirty = True
+
+    def _recompute(self) -> None:
         """
-        saved_cap = self.options.line_length_hard_cap
-        try:
-            if max_width is not None:
-                self.options.line_length_hard_cap = (
-                    max_width if saved_cap is None else min(saved_cap, max_width)
+        Rebuild the series from the raw data and recompute `self.options` from
+        the accumulated options and pinned bounds. The caller must hold
+        `self._lock`. This is the expensive part of an update.
+        """
+        self._dirty = False
+
+        # Nothing to plot yet: keep default options and defer until data arrives
+        # (this also makes a style-only update on an empty plot a no-op instead
+        # of an error).
+        if self._raw_ys is None:
+            return
+
+        # Always rebuild a fresh series from the raw data, so the validator's
+        # in-place transforms (e.g. log scaling) are applied exactly once and
+        # never compounded across repeated renders.
+        previous = self.series
+        self.series = MultiSeries(xs=self._raw_xs, ys=self._raw_ys)
+        if len(self.series) == 0:
+            return
+
+        # If the data type of an axis flipped (e.g. float <-> datetime), any
+        # pinned bound on that axis is now in the wrong numeric space and must be
+        # dropped so it auto-ranges in the new space. Bounds supplied explicitly
+        # since the last recompute are kept.
+        explicit = self._pending_bound_values
+        if self.series.x_is_time_series != previous.x_is_time_series:
+            self._pinned_bounds -= {"x_min", "x_max"} - set(explicit)
+        if self.series.y_is_time_series != previous.y_is_time_series:
+            self._pinned_bounds -= {"y_min", "y_max"} - set(explicit)
+
+        # Build the kwargs for the validator: persisted options + pending
+        # explicit bounds + re-injected pinned bounds. Re-injected bounds come
+        # from `self.options` and are therefore already in plot space, so the
+        # validator must not transform them again.
+        merged: Dict = dict(self._option_kwargs)
+        merged.update(explicit)
+        reinjected = set()
+        for b in self._pinned_bounds:
+            if b not in merged:
+                merged[b] = getattr(self.options, b)
+                reinjected.add(b)
+
+        self.options = validate_and_transform_options(
+            series=self.series,
+            kwargs=merged,
+            bounds_already_in_plot_space=frozenset(reinjected),
+        )
+        self._pending_bound_values = {}
+
+    def _render(self, max_width: Optional[int] = None) -> str:
+        """
+        The single render path: turn the current state into the plot string,
+        without printing, erasing, or permanently mutating the options. Applies
+        any pending data/options first (see `_recompute`).
+
+        If `max_width` is given (i.e. when rendered by Rich), the plot fills the
+        allocated width: the total line length is capped to `max_width` via the
+        existing `line_length_hard_cap` mechanism, and -- unless the user set an
+        explicit `width` -- the plot region also grows to fill it, the way Rich
+        renderables normally fill their container. An explicit `width` is
+        respected (only shrunk if the container is narrower).
+        """
+        with self._lock:
+            if self._dirty:
+                self._recompute()
+            opts = self.options
+            saved_cap = opts.line_length_hard_cap
+            saved_width = opts.width
+            saved_initial_width = opts._initial_width
+            try:
+                if max_width is not None:
+                    opts.line_length_hard_cap = (
+                        max_width if saved_cap is None else min(saved_cap, max_width)
+                    )
+                    # Grow to fill the allocated width when the user did not pick
+                    # a width. Overshooting and letting the hard-cap logic trim
+                    # makes the plot fit `max_width` exactly (accounting for
+                    # borders and axis labels).
+                    if "width" not in self._option_kwargs:
+                        opts.width = max_width
+                        opts._initial_width = max_width
+                header_buffer = sections.generate_header(opts)
+                (
+                    x_axis_labels,
+                    y_axis_labels,
+                    pixel_character_matrix,
+                ) = sections.generate_body_raw_elements(self.series, opts)
+                body_buffer = sections.generate_body(
+                    x_axis_labels, y_axis_labels, pixel_character_matrix, opts
                 )
-            header_buffer = sections.generate_header(self.options)
-            (
-                x_axis_labels,
-                y_axis_labels,
-                pixel_character_matrix,
-            ) = sections.generate_body_raw_elements(self.series, self.options)
-            body_buffer = sections.generate_body(
-                x_axis_labels, y_axis_labels, pixel_character_matrix, self.options
-            )
-            return "\n".join(header_buffer + body_buffer)
-        finally:
-            # Restore the options to their pre-render state. The cap logic in
-            # `sections` mutates `width`, so reset both.
-            self.options.line_length_hard_cap = saved_cap
-            self.options.reset_width()
+                return "\n".join(header_buffer + body_buffer)
+            finally:
+                # Restore the options to their pre-render state. The cap logic in
+                # `sections` mutates `width`, so restore all three.
+                opts.line_length_hard_cap = saved_cap
+                opts._initial_width = saved_initial_width
+                opts.width = saved_width
 
     def __rich_console__(
         self, console: "Console", options: "ConsoleOptions"
@@ -174,7 +312,7 @@ class plot_gen:
                 "Install it with:  pip install uniplot[rich]"
             ) from e
 
-        plot_string = self._render_to_string(max_width=options.max_width)
+        plot_string = self._render(max_width=options.max_width)
         # `from_ansi` parses uniplot's ANSI color codes into native Rich styling,
         # so colors are preserved and no raw escape sequences leak into output.
         yield Text.from_ansi(plot_string)
@@ -188,7 +326,7 @@ class plot_gen:
         """
         from rich.measure import Measurement
 
-        plot_string = self._render_to_string(max_width=options.max_width)
+        plot_string = self._render(max_width=options.max_width)
         widths = [
             len(colors.COLOR_CODE_REGEX.sub("", line))
             for line in plot_string.split("\n")
@@ -205,8 +343,7 @@ def plot_to_string(ys: Any, xs: Optional[Any] = None, **kwargs) -> str:
     Can be used to integrate uniplot in other applications, or if the output is
     desired to be not stdout.
     """
-    plt = plot_gen(return_string=True)
-    return str(plt.update(xs=xs, ys=ys, **kwargs))
+    return plot_gen(xs=xs, ys=ys, **kwargs).to_string()
 
 
 #####################################
@@ -263,7 +400,6 @@ def histogram_to_string(
         multi_series, bins, bins_min, bins_max
     )
 
-    plt = plot_gen(return_string=True)
     # Histograms usually make sense only with lines
     kwargs["lines"] = True
-    return str(plt.update(xs=xs_histo, ys=ys_histo, **kwargs))
+    return plot_to_string(xs=xs_histo, ys=ys_histo, **kwargs)

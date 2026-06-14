@@ -60,14 +60,15 @@ def test_rich_measure_is_sane():
     assert measurement.maximum <= console.options.max_width
 
 
-def test_render_to_string_is_idempotent():
+def test_render_is_idempotent():
     plot = plot_gen(ys=YS)
+    plot.to_string()  # force initial recompute (options are computed lazily)
     original_width = plot.options.width
     original_cap = plot.options.line_length_hard_cap
 
-    first = plot._render_to_string()
-    plot._render_to_string(max_width=40)
-    second = plot._render_to_string()
+    first = plot.to_string()
+    plot.to_string(max_width=40)
+    second = plot.to_string()
 
     # Options are unchanged after rendering at different widths.
     assert plot.options.width == original_width
@@ -76,11 +77,77 @@ def test_render_to_string_is_idempotent():
     assert first == second
 
 
-def test_render_to_string_respects_max_width():
+def test_render_respects_max_width():
     plot = plot_gen(ys=YS)
-    constrained = plot._render_to_string(max_width=40)
+    constrained = plot.to_string(max_width=40)
     for line in constrained.split("\n"):
         assert len(ANSI_ESCAPE.sub("", line)) <= 40
+
+
+def test_single_render_path_equivalence():
+    # to_string() and __rich_console__ must produce the same plot at the same
+    # width, which guards against re-introducing a duplicate render path. (Rich
+    # renders at the console width, so to_string() is given the same max_width.)
+    width = 200
+    via_to_string = plot_gen(ys=YS).to_string(max_width=width)
+
+    console = Console(record=True, width=width, no_color=True, legacy_windows=False)
+    console.print(plot_gen(ys=YS))
+    via_rich = console.export_text()
+
+    # Compare ignoring trailing whitespace per line (Rich pads to console width).
+    def norm(s):
+        return "\n".join(line.rstrip() for line in s.splitlines()).rstrip()
+
+    assert norm(via_rich) == norm(via_to_string)
+
+
+def test_live_smoke(monkeypatch):
+    import io
+    from rich.live import Live
+
+    console = Console(file=io.StringIO(), width=80, force_terminal=True)
+    plt = plot_gen(ys=[0.0], lines=True, y_min=-1.0, y_max=1.0)
+    ys = []
+    with Live(plt, console=console, refresh_per_second=4) as live:
+        for i in range(20):
+            ys.append((i % 5) - 2)
+            plt.set_data(ys=ys[-10:])
+        live.refresh()
+    out = console.file.getvalue()
+    assert "┌" in out
+
+
+def test_set_data_is_thread_safe_under_render():
+    # Interleave set_data on one thread with rendering on another; the lock must
+    # keep this from raising (e.g. torn options state). Both sides do a bounded
+    # number of iterations and yield, so neither starves the other.
+    import threading
+    import time
+
+    plt = plot_gen(ys=YS)
+    errors = []
+
+    def producer():
+        for i in range(50):
+            try:
+                plt.set_data(ys=[v + (i % 3) for v in YS])
+            except Exception as e:  # noqa: BLE001
+                errors.append(e)
+            time.sleep(0.001)
+
+    t = threading.Thread(target=producer)
+    t.start()
+    try:
+        for _ in range(50):
+            try:
+                plt.to_string(max_width=50)
+            except Exception as e:  # noqa: BLE001
+                errors.append(e)
+            time.sleep(0.001)
+    finally:
+        t.join()
+    assert not errors, errors[:3]
 
 
 def test_helpful_error_when_rich_missing(monkeypatch):

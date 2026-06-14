@@ -7,8 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Integration with [Rich](https://github.com/Textualize/rich).
+- Integration with [Rich](https://github.com/Textualize/rich), including support
+  for live-updating displays via `rich.live.Live`. A `plot_gen` object is a Rich
+  renderable and exposes a thread-safe `plot_gen.set_data(...)` for feeding new
+  data without printing. Install with `pip install uniplot[rich]`.
+- `plot_gen.to_string()` returns the current plot as a string without printing,
+  and `plot_gen.reset_view()` resets the view window and clears pinned bounds.
+### Changed
+- **Breaking:** `plot_gen` was simplified. `update()` now always re-draws from
+  the current state and returns the rendered string (previously returned `None`
+  unless `return_string=True`). The `return_string` constructor argument has
+  been removed — use `plot_gen.to_string()` / `plot_to_string()` for string
+  output. Bounds set explicitly (or via interactive pan/zoom) are now *pinned*
+  and preserved across data updates, while all other bounds keep auto-ranging.
 ### Fixed
+- A style-only update on a `plot_gen` (e.g. `update(title=...)` before any data)
+  no longer raises `KeyError`.
+- Explicitly-set bounds are no longer wrongly carried over when the data type
+  changes between updates (e.g. switching from numeric to datetime values).
 - Upgraded dependencies to resolve dependabot warning on pytest /
   CVE-2025-71176. This only affects uniplot developers, not users.
 

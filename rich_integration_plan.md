@@ -201,8 +201,11 @@ uv run mypy uniplot
 
 ## Out of scope (future follow-ups)
 
-Rich-specific widgets, Textual integration, live-updating dashboards,
-interactive Rich controls, new plotting functionality.
+Rich-specific widgets, Textual integration, interactive Rich controls, new
+plotting functionality.
+
+Live-updating dashboards are **promoted to Phase 2** below (design + effort
+assessment only — not yet scheduled for implementation).
 
 ---
 
@@ -214,3 +217,143 @@ interactive Rich controls, new plotting functionality.
 4. Update the example into a real multi-pattern demo; run it.
 5. Run full gate (pytest + ruff + mypy).
 6. Propose README copy for your review, then apply.
+
+> **Status:** Phase 1 (Levels 1–3 above) is implemented and shipped. The section
+> below is a *design + effort assessment* for a possible Phase 2; no code yet.
+
+---
+
+# Phase 2: Live updates (design & effort assessment)
+
+## Target experience
+
+```python
+from rich.live import Live
+from uniplot import plot_gen
+
+plot = plot_gen(ys=initial_data)
+with Live(plot, refresh_per_second=4) as live:
+    while True:
+        new_data = consume()        # may arrive thousands of times per second
+        plot.set_data(ys=new_data)  # cheap, no printing
+        # No explicit re-render needed — Live's own thread redraws at 4 fps.
+```
+
+## What already works today (verified)
+
+* The **render side is done.** Mutating a plot's state and re-rendering through
+  `__rich_console__` already reflects the new data — confirmed empirically.
+* A `plot_gen(return_string=True)` already has a **non-printing `update()`**, so
+  a basic Live loop functions *today* without new code.
+
+So "does this already exist via `return_string`?" — **mechanically yes.** The
+gaps are (a) the `return_string=True` flag misrepresents intent for this use
+case (you ignore the returned string), and (b) **thread safety** and **rate
+decoupling**, which are the parts actually worth designing.
+
+## The interesting problem: decouple high-rate ingest from low-rate render
+
+Goal (your words): *consume at a high rate, but update the plot only a few times
+a second.*
+
+**Key insight — we should NOT build a render thread inside uniplot.** Rich
+`Live` already runs a background refresh thread at `refresh_per_second`. That is
+exactly the throttled render loop we want. So the division of labor is:
+
+| Role | Who | Rate |
+|------|-----|------|
+| **Producer** — push incoming data into the plot's state | user thread / main loop | high (unbounded) |
+| **Renderer** — call `__rich_console__` and redraw | Rich `Live`'s own thread | fixed (e.g. 4 fps) |
+
+Because the renderer always reads "the current state," **many producer updates
+between two ticks naturally coalesce into a single render** — no queue, no
+backlog, no custom timing code. This is the elegant part: the decoupling falls
+out of Live's existing design once our state is thread-safe.
+
+## Thread safety — the one real complexity
+
+Two threads now touch shared state: the producer mutating `self.series` /
+`self.options`, and Live's thread rendering. Today's `_render_to_string` makes
+this unsafe because it **temporarily mutates `self.options`**
+(`line_length_hard_cap` + `width`) and restores them in a `finally`. A
+concurrent producer update — or two overlapping renders — can observe torn
+state.
+
+Two ways to fix it, in increasing cleanliness:
+
+### Option A — Lock (simple, recommended first step)
+
+Add a `threading.Lock` to `plot_gen`; acquire it around (a) state mutation in
+`set_data`/`update` and (b) the whole of `_render_to_string`. Renders are
+milliseconds at 4 fps, so contention is negligible. ~10 lines. The default
+`Live(auto_refresh=True)` then "just works."
+
+### Option B — Make rendering read-only (cleaner; also fixes a latent wart)
+
+Refactor `_render_to_string` so it never mutates shared state: compute the
+width-capped options on a **copy** (`dataclasses.replace(self.options, ...)`)
+and render against that. Rendering becomes pure/read-only, so the only writer is
+the producer's reference swap (`self.series = ...`), which is atomic under the
+GIL — **little or no locking needed**, and the ugly try/finally restore
+disappears. This is my recommended end state; it improves Phase 1 code quality
+independent of Live.
+
+(Realistically: do **B**, and keep a small lock for the series/options swap to be
+safe against multiple producer threads.)
+
+## De-simplifying streaming: a bounded window
+
+The current streaming example grows its data list forever, so memory and
+per-render cost climb without bound, and auto-ranging eventually flattens recent
+detail. For sustained high-rate ingest we'd want a **rolling window** — keep the
+last *N* points (or last *T* seconds). Options:
+
+* A `max_points: Optional[int]` option that drops oldest points on update, **or**
+* A small `append(y, x=None)` method backed by a `collections.deque(maxlen=N)`
+  so high-rate ingest is O(1) and memory is bounded.
+
+This is the piece that most directly addresses "the streaming use case always
+felt very simplified." It's an independent, optional enhancement.
+
+## Proposed public API (for a future round)
+
+* `plot.set_data(ys=..., xs=..., **kwargs)` — replace data, no printing,
+  thread-safe. (Clearer than overloading `return_string=True`; `update()` and
+  existing streaming docs stay untouched.)
+* *(optional)* `plot.append(y, x=None)` + `max_points=N` — bounded rolling
+  stream.
+* No new dependency: `Live` ships inside `rich`, already the optional extra.
+
+## Effort & added complexity
+
+| Item | Effort | Notes |
+|------|--------|-------|
+| Reuse `return_string` + document Live | **trivial** | Works now; just docs + example. |
+| `set_data()` non-printing method | **low** | Thin wrapper over existing state-rebuild logic. |
+| Make `_render_to_string` non-mutating (Option B) | **low** | ~10 lines via `dataclasses.replace`; also cleans up Phase 1. |
+| Thread-safety lock | **low** | One `Lock`; guard swap + render. |
+| Bounded window (`max_points` / `append`) | **low–moderate** | The main scope expander; touches `MultiSeries` ingestion. |
+| Example `examples/11-rich_live.py` + tests + docs | **moderate** | Concurrency tests are fiddly — prefer deterministic single-thread tests + one bounded stress test. |
+
+**Overall: small-to-moderate**, no new dependencies. The render path is already
+proven. The genuine new surface area is (1) the threading contract — which
+methods are safe to call from which thread, clearly documented — and (2) the
+optional bounded-window feature.
+
+## Risks / things to decide later
+
+* **Encouraging threads in user code.** We must document precisely what is
+  thread-safe. A clean recipe (producer mutates via `set_data`; Live's thread
+  renders) keeps users on the safe path.
+* **`Live` needs a real TTY.** In non-interactive/redirected output it degrades
+  to plain prints; tests must account for this (force/record console).
+* **Backwards compatibility.** Adding `set_data` is purely additive. Changing
+  `_render_to_string` internals is invisible to users. The existing streaming
+  `update()` behavior is preserved.
+
+## Recommendation
+
+If/when we build Phase 2: do **Option B** (read-only render) + a small lock +
+`set_data()` + an `examples/11-rich_live.py` driven by `Live(refresh_per_second=...)`.
+Treat the bounded rolling window (`max_points`/`append`) as a closely-related but
+separately-scoped follow-up, since it's the item with the most design surface.

@@ -55,6 +55,20 @@ def test_logarithmic_plotting():
     plot(xs=xs, ys=ys, x_as_log=True, y_as_log=True)
 
 
+def test_logarithmic_plot_gen_does_not_compound_log_across_updates():
+    # The validator applies log scaling to the series in place. Re-rendering
+    # must rebuild from the raw data so the log is applied exactly once, not
+    # compounded (which previously turned the data into NaN and crashed).
+    plt = plot_gen(
+        ys=[0.0006, 0.0005, 0.0008, 0.003, 0.24], x_as_log=True, y_as_log=True
+    )
+    plt.to_string()
+    first = list(plt.series.ys[0])
+    plt.update()
+    plt.update()
+    assert list(plt.series.ys[0]) == first
+
+
 def test_logarithmic_plotting_should_silently_ignore_invalid_values():
     ys = [-1.0, 0.0, 1.0, np.nan, 20.09, None, 12.2]
     plot(xs=ys, ys=ys, x_as_log=True, y_as_log=True)
@@ -210,6 +224,83 @@ def test_plot_gen_update_without_changing_any_options():
     plt = plot_gen(title="Test")
     plt.update(ys=[1, 2, 3])
     plt.update(ys=[1, 2, 3, 4])
+
+
+# NOTE: `plot_gen` computes options lazily at render time, so these tests call
+# `to_string()` to force a recompute before asserting on `plt.options`.
+
+
+def test_plot_gen_explicit_bounds_are_pinned_across_updates():
+    plt = plot_gen(ys=[1, 2, 3], y_min=-10, y_max=10)
+    plt.set_data(ys=[1, 2, 3, 4])
+    plt.to_string()
+    assert (plt.options.y_min, plt.options.y_max) == (-10, 10)
+
+
+def test_plot_gen_non_pinned_bounds_auto_range():
+    plt = plot_gen(ys=[1, 2, 3])
+    plt.set_data(ys=[1, 2, 3, 100])
+    plt.to_string()
+    assert plt.options.y_max > 50
+
+
+def test_plot_gen_mixed_pin_only_one_bound():
+    plt = plot_gen(ys=[1, 2, 3], y_max=999)
+    plt.set_data(ys=[-50, 1, 2, 3])
+    plt.to_string()
+    # Pinned upper bound preserved, lower bound auto-ranges to cover -50.
+    assert plt.options.y_max == 999
+    assert plt.options.y_min < 0
+
+
+def test_plot_gen_style_only_update_does_not_crash():
+    # Previously raised KeyError: 'ys' (no data was ever supplied).
+    assert isinstance(plot_gen().update(title="t"), str)
+    assert isinstance(plot_gen(title="t").update(title="t2"), str)
+
+
+def test_plot_gen_non_bound_options_persist_across_data_updates():
+    plt = plot_gen(ys=[1, 2, 3], title="Persist", lines=True)
+    plt.set_data(ys=[1, 2, 3, 4])
+    plt.to_string()
+    assert plt.options.title == "Persist"
+    assert plt.options.lines == [True]
+
+
+def test_plot_gen_pinned_bounds_dropped_on_data_type_change():
+    import numpy as np
+
+    # Float data with explicit (float) x bounds, which get pinned.
+    plt = plot_gen(xs=[0, 1, 2, 3, 4], ys=[1.0, 2, 3, 2, 1], x_min=0, x_max=5)
+    plt.to_string()
+    assert plt.options.x_min == 0 and plt.options.x_max == 5
+
+    # Switching to datetime data must drop the now-meaningless float pins so the
+    # axis auto-ranges into timestamp space (~1.7e9), keeping points on screen.
+    dates = np.array(
+        ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"],
+        dtype="datetime64[s]",
+    )
+    plt.set_data(xs=dates, ys=[1.0, 2, 3, 2, 1])
+    plt.to_string()
+    assert plt.options.x_min > 1e9
+
+
+def test_plot_gen_reset_view_clears_pins():
+    plt = plot_gen(ys=[1, 2, 3], y_min=-10, y_max=10)
+    plt.reset_view()
+    assert plt._pinned_bounds == set()
+    plt.set_data(ys=[1, 2, 3, 100])
+    plt.to_string()
+    # With pins cleared, the upper bound auto-ranges again.
+    assert plt.options.y_max > 50
+
+
+def test_plot_gen_update_returns_string():
+    plt = plot_gen(ys=[1, 2, 3])
+    out = plt.update(ys=[1, 2, 3, 4])
+    assert isinstance(out, str)
+    assert "┌" in out
 
 
 #####################
