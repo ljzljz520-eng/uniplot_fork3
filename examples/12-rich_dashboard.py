@@ -10,10 +10,14 @@ dashboard scales to the size of the terminal. Press Ctrl-C to quit.
 Note that uniplot draws its own frame and title, so no Rich `Panel` is used --
 that would double the borders. Each plot's live value is shown in its title.
 
+By default the dashboard runs for 5 seconds and then exits (handy for CI and
+demos); pass `--duration 0` to run until Ctrl-C instead.
+
 Requires the optional `rich` dependency plus `psutil`:
     pip install uniplot[rich] psutil
 """
 
+import argparse
 from collections import deque
 import datetime
 import time
@@ -23,6 +27,15 @@ from rich.console import Group
 from rich.live import Live
 
 from uniplot import plot_gen
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--duration",
+    type=float,
+    default=5.0,
+    help="seconds to run before exiting; use 0 (or negative) to run until Ctrl-C",
+)
+args = parser.parse_args()
 
 WINDOW = 100  # number of samples kept in view
 INTERVAL = 0.5  # seconds between samples
@@ -55,8 +68,10 @@ up_hist: deque = deque(maxlen=WINDOW)
 psutil.cpu_percent(interval=None)
 prev = psutil.net_io_counters()
 
+deadline = time.monotonic() + args.duration if args.duration > 0 else None
+
 with Live(dashboard, refresh_per_second=4):
-    while True:
+    while deadline is None or time.monotonic() < deadline:
         time.sleep(INTERVAL)
 
         cpu = psutil.cpu_percent(interval=None)

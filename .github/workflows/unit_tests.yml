@@ -3,11 +3,15 @@ name: Unit Tests
 on: [push]
 
 jobs:
-  test-with-numba:
+  test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        fast: [true, false]
+
+    name: Python ${{ matrix.python-version }}${{ matrix.fast && ' (numba)' || ' (NumPy fallback)' }}
 
     steps:
     - name: Check out code
@@ -21,32 +25,11 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v5
 
-    - name: Install with fast extras
-      run: uv sync --extra fast
+    - name: Install dependencies
+      run: uv sync ${{ matrix.fast && '--extra fast' || '' }}
 
     - name: Run test script
       run: make test
 
     - name: Run all example scripts
       run: make run_all_examples
-
-  test-without-numba:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
-
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v5
-
-    - name: Run unit tests (NumPy fallback)
-      run: make unit_test
