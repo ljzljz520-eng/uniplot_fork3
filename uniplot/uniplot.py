@@ -83,14 +83,19 @@ class plot_gen:
     Stateful plot object, used for streaming, repeated updates and as a Rich
     renderable.
 
-    Every `update()` re-draws from scratch (relying on caching).
-    The only state kept is the
-    data, the options, which view bounds are "pinned", the accumulated non-data
-    options, and the number of lines last printed (so the previous frame can be
-    erased).
+    Every `update()` re-draws from scratch (relying on caching). The only state
+    kept is the data, the options, which view bounds are "pinned", the
+    accumulated non-data options, and the number of lines last printed (so the
+    previous frame can be erased).
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, return_string=False, **kwargs) -> None:
+        if return_string:
+            raise ValueError(
+                "The `return_string` argument was removed. "
+                "Use `plot_to_string(...)` or `plot_gen.to_string()` instead."
+            )
+
         self.series: MultiSeries = MultiSeries([])
         self.options: Options = Options()
         # The raw, untransformed data as last supplied by the user. The series
