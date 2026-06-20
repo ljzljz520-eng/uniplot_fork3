@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   been removed — use `plot_gen.to_string()` / `plot_to_string()` for string
   output. Bounds set explicitly (or via interactive pan/zoom) are now *pinned*
   and preserved across data updates, while all other bounds keep auto-ranging.
+- Upgraded mypy to v2.1.0 and dropped CI support for Python 3.8 and 3.9 (EOL).
 ### Fixed
 - A style-only update on a `plot_gen` (e.g. `update(title=...)` before any data)
   no longer raises `KeyError`.

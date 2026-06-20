@@ -5,7 +5,7 @@ description = "Lightweight plotting to the terminal. 4x resolution via Unicode."
 authors = [{name = "Olav Stetter", email = "olav.stetter@googlemail.com"}]
 license = { file = "LICENSE" }
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "numpy >=1.22.0",
     "readchar>=4.2.1",
@@ -47,8 +47,6 @@ classifiers = [
     "Topic :: Terminals",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -70,13 +68,13 @@ Issues = "https://github.com/olavolav/uniplot/issues"
 [dependency-groups]
 dev = [
     "pytest >=6.0.1",
-    "mypy ==1.14.1",
+    "mypy ==2.1.0",
     "pandas >=2.0.3",
     "polars >=0.20.5",
     "ruff >=0.9.0",
-    "pyinstrument>=5.0.3",
-    "rich>=14.3.4",
-    "psutil>=5.9.0",
+    "pyinstrument >=5.0.3",
+    "rich >=14.3.4",
+    "psutil >=5.9.0",
 ]
 
 [tool.uv]
