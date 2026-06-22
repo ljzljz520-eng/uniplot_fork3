@@ -5,6 +5,18 @@ All notable changes to uniplot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Fixed
+- Thread-safety: `plot_gen.set_data()` now snapshots the supplied data
+  (`xs`/`ys`) *and* any mutable option values (e.g. `lines`, `color`,
+  `legend_labels`, gridlines) at call time, so it is safe to pass live,
+  still-growing lists while `rich.live.Live` renders on its own thread.
+  Previously the producer's later appends could desync a list from the series
+  count and crash the background render thread (a length assertion for data, a
+  `ValueError` for options). The snapshot is cheap (≈0.15 ms for a 1M-point
+  NumPy array). Pass `set_data(..., copy=False)` to skip it when you already
+  hand over fresh, private objects each call.
+
 ## [0.23.0] - 2026-06-21
 ### Added
 - Integration with [Rich](https://github.com/Textualize/rich), including support

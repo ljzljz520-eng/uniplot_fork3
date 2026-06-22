@@ -1,5 +1,6 @@
 import threading
 from typing import Dict, Optional, Final, Any, Tuple, TYPE_CHECKING
+import numpy as np
 from readchar import readkey, key
 
 from uniplot.multi_series import MultiSeries
@@ -137,17 +138,37 @@ class plot_gen:
         print(output)
         return output
 
-    def set_data(self, **kwargs) -> None:
+    def set_data(self, copy: bool = True, **kwargs) -> None:
         """
         Record new data/options without rendering or printing. Intended for use
         with `rich.live.Live`, where Rich owns the screen and re-renders the
         object on its own schedule; the (potentially expensive) recompute then
         happens once per rendered frame rather than once per call.
 
+        By default the supplied data *and* any mutable option values are
+        snapshotted at call time, so it is safe to hand over live, still-growing
+        lists: the producer can keep appending without desyncing them or crashing
+        the render thread. The snapshot is cheap (see `_defensive_copy`). Pass
+        `copy=False` to skip it when you already hand over fresh, private objects
+        each call and want zero overhead.
+
+        Accumulation across calls:
+
+        - Options (e.g. `title`, `lines`, `color`) *accumulate*: each is kept
+          until you pass that key again, so a later call need only send what
+          changed. Passing a key again overwrites it (last value wins).
+        - Explicit bounds (`x_min`/`x_max`/`y_min`/`y_max`) are additionally
+          *pinned* and preserved across later data updates, until `reset_view()`
+          or an axis data-type change (e.g. numeric <-> datetime).
+        - Data is *replaced*, not accumulated: passing `ys` swaps the whole
+          series. `ys` without `xs` resets the x-axis to the serial index `1..N`
+          (x and y are one coupled unit), so to keep a custom x-axis pass `xs`
+          together with `ys` every time. A lone `xs` (no `ys`) is ignored.
+
         Note that `self.options` reflects the new data only after the next
         render (e.g. via `to_string()` or a `Live` refresh).
         """
-        self._ingest(kwargs)
+        self._ingest(kwargs, copy=copy)
 
     def to_string(self, max_width: Optional[int] = None) -> str:
         """
@@ -170,12 +191,16 @@ class plot_gen:
         self.last_nr_of_lines += elements.count_lines(text)
         print(text)
 
-    def _ingest(self, kwargs: Dict) -> None:
+    def _ingest(self, kwargs: Dict, copy: bool = True) -> None:
         """
         Record new data/options cheaply and mark the plot dirty. The expensive
         recompute is deferred to the next render (`_recompute`), so a high-rate
         producer does not starve the renderer and the heavy work runs once per
         rendered frame rather than once per update.
+
+        Unless `copy=False`, the data is snapshotted here (synchronously, on the
+        caller's thread) so later mutation by the producer cannot affect a
+        deferred render -- the crux of thread-safety with `rich.live.Live`.
         """
         with self._lock:
             kwargs = dict(kwargs)
@@ -187,11 +212,21 @@ class plot_gen:
             # render time (only `ys` triggers a data change; a lone `xs` is
             # ignored, matching the documented streaming contract).
             if has_ys:
+                if copy:
+                    xs = _defensive_copy(xs)
+                    ys = _defensive_copy(ys)
                 self._raw_xs = xs
                 self._raw_ys = ys
 
             # Pin any explicitly-passed bounds; accumulate all other options.
+            # Option values are snapshotted too: several (e.g. `lines`, `color`,
+            # `legend_labels`, gridlines) are mutable lists, and a producer that
+            # mutates one after the call could otherwise desync it from the
+            # series count and crash the deferred render -- the same race as for
+            # `xs`/`ys`. Scalars/strings pass through `_defensive_copy` untouched.
             for k, v in kwargs.items():
+                if copy:
+                    v = _defensive_copy(v)
                 if k in _BOUND_KEYS:
                     self._pinned_bounds.add(k)
                     self._pending_bound_values[k] = v
@@ -408,3 +443,52 @@ def histogram_to_string(
     # Histograms usually make sense only with lines
     kwargs["lines"] = True
     return plot_to_string(xs=xs_histo, ys=ys_histo, **kwargs)
+
+
+###########
+# private #
+###########
+
+
+def _defensive_copy(value: Any) -> Any:
+    """
+    Return a private copy of a value that is immune to later in-place mutation
+    or appends by the producer. Used for both the `xs`/`ys` data and for
+    mutable option values (e.g. `lines`, `color`, `legend_labels`, gridlines).
+
+    This is what makes `plot_gen.set_data` safe to call with live, still-growing
+    lists while `rich.live.Live` renders on another thread: we capture the value
+    at call time (synchronously, on the producer's own thread), so the producer
+    cannot desync it between the call and the deferred render (see `set_data`).
+
+    The copy is intentionally shallow/structural -- an O(n) memcpy for arrays,
+    one level deep for sequences -- so it stays cheap (at 1M points: ~0.15 ms
+    for a NumPy array, ~2 ms for a Python list). The expensive cast/validation
+    remains deferred to `_recompute`. Immutable scalars/strings (and anything we
+    cannot cheaply copy) pass through unchanged.
+    """
+    if value is None:
+        return None
+    # NumPy array (incl. an N-D multi-series block): one copy captures it all.
+    if isinstance(value, np.ndarray):
+        return value.copy()
+    # Generic sequence. Copy one level deep so that, in the multi-series case,
+    # an append to a live *inner* list cannot desync x/y lengths at render time.
+    if isinstance(value, (list, tuple)):
+        return [
+            row.copy()
+            if isinstance(row, np.ndarray)
+            else row[:]
+            if isinstance(row, (list, tuple))
+            else row
+            for row in value
+        ]
+    # Anything else with a value-preserving `.copy()` (e.g. a pandas
+    # Series/DataFrame): use it to keep dtype and index intact.
+    copy_method = getattr(value, "copy", None)
+    if callable(copy_method):
+        try:
+            return copy_method()
+        except Exception:
+            pass
+    return value

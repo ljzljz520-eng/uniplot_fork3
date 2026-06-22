@@ -8,7 +8,9 @@ terminal display. The pattern decouples data ingestion from rendering:
   * Rich's own background thread re-renders the plot at `refresh_per_second`.
 
 Many `set_data` calls between two refresh ticks simply coalesce into one render,
-so a fast producer does not flood the terminal. `set_data` is thread-safe.
+so a fast producer does not flood the terminal. `set_data` is thread-safe: it
+snapshots the data (and any mutable options) you pass, so handing it a live,
+still-growing list is safe even though Rich renders on a different thread.
 
 Requires the optional `rich` dependency:  pip install uniplot[rich]
 """
@@ -29,6 +31,8 @@ ys = []
 with Live(plt, refresh_per_second=10) as live:
     for i in range(400):
         ys.append(math.sin(i / 10))
-        # High-rate state update (~200 Hz here); Rich renders at 10 fps.
+        # High-rate state update (~200 Hz here); Rich renders at 10 fps. The
+        # slice is just the rolling window -- `set_data` snapshots internally,
+        # so passing the live `ys` list directly would be safe too.
         plt.set_data(ys=ys[-window:])
         time.sleep(0.005)

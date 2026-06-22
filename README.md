@@ -329,7 +329,10 @@ For a smoothly updating display, drive a plot with `rich.live.Live`. Feed new
 data with the thread-safe `set_data()` (which updates state without printing)
 and let Rich re-render on its own schedule. A fast producer and a slower refresh
 rate decouple cleanly — updates between two refreshes simply coalesce into one
-render:
+render. `set_data()` snapshots the data and options you pass, so it is safe to
+hand over a live, still-growing list even while Rich renders on another thread
+(pass `copy=False` to skip the snapshot if you already supply fresh objects each
+call):
 
 ```python
 import math, time

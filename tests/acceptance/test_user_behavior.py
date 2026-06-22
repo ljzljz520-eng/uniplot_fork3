@@ -303,6 +303,80 @@ def test_plot_gen_update_returns_string():
     assert "┌" in out
 
 
+def test_plot_gen_set_data_snapshots_against_later_mutation():
+    """
+    The `rich.live.Live` race: `set_data` is called with live lists that the
+    producer keeps appending to, while the (expensive) recompute runs later on
+    Rich's render thread. If we stored references, the producer's appends would
+    desync the x- and y-series lengths and crash the render thread's length
+    assertion. `set_data` must therefore snapshot the data at call time.
+    """
+    ys = [1.0, 2.0, 3.0]
+    xs = [1, 2, 3]
+    plt = plot_gen()
+    plt.set_data(xs=xs, ys=ys)
+    # Producer keeps appending after the call -- and drifts xs/ys apart.
+    ys.append(4.0)
+    ys.append(5.0)
+    xs.append(4)
+    # Rendering must neither crash nor reflect the post-call mutations.
+    out = plt.to_string()
+    assert isinstance(out, str)
+    assert plt.series.shape() == [3]
+
+
+def test_plot_gen_set_data_snapshots_inner_lists_of_multi_series():
+    # An append to a live *inner* list must not desync the multi-series either.
+    y0 = [1.0, 2.0, 3.0]
+    y1 = [3.0, 2.0, 1.0]
+    plt = plot_gen()
+    plt.set_data(ys=[y0, y1])
+    y0.append(99.0)
+    plt.to_string()
+    assert plt.series.shape() == [3, 3]
+
+
+def test_plot_gen_set_data_snapshots_numpy_in_place_mutation():
+    arr = np.array([1.0, 2.0, 3.0])
+    plt = plot_gen()
+    plt.set_data(ys=arr)
+    arr[0] = 999.0  # in-place mutation after the call
+    plt.to_string()
+    assert plt.series.ys[0][0] == 1.0
+
+
+def test_plot_gen_set_data_copy_false_skips_snapshot():
+    # Escape hatch for producers that already hand over a fresh, private array
+    # each tick and want zero snapshot overhead.
+    arr = np.array([1.0, 2.0, 3.0])
+    plt = plot_gen()
+    plt.set_data(ys=arr, copy=False)
+    assert plt._raw_ys is arr
+
+
+def test_plot_gen_set_data_snapshots_mutable_options():
+    """
+    Mutable *option* values (here a per-series `lines` list) must be snapshotted
+    too, not just `xs`/`ys`. Otherwise a producer mutating the list it passed can
+    desync it from the series count and raise `ValueError("Invalid 'lines'
+    option.")` on the background render thread -- the same race as for data.
+    """
+    lines = [True, True]
+    plt = plot_gen()
+    plt.set_data(ys=[[1.0, 2.0, 3.0], [3.0, 2.0, 1.0]], lines=lines)
+    lines.append(True)  # now len 3 != 2 series -> would crash the renderer
+    out = plt.to_string()
+    assert isinstance(out, str)
+    assert plt.options.lines == [True, True]
+
+
+def test_plot_gen_set_data_copy_false_skips_option_snapshot():
+    lines = [True, True]
+    plt = plot_gen()
+    plt.set_data(ys=[[1.0, 2.0, 3.0], [3.0, 2.0, 1.0]], lines=lines, copy=False)
+    assert plt._option_kwargs["lines"] is lines
+
+
 #####################
 # Testing histogram #
 #####################
