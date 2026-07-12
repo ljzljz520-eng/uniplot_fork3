@@ -387,6 +387,17 @@ def test_plotting_a_histogram():
     histogram(xs)
 
 
+def test_plotting_a_histogram_of_datetimes_shows_date_labels():
+    # A histogram of a datetime64 series must render its x-axis as dates, not
+    # as raw epoch numbers (see issue: timestamp display for histogram X axis).
+    base = np.datetime64("2002-10-27T04:30", "ns")
+    dates = base + (np.arange(100) * np.timedelta64(1, "h")).astype("m8[ns]")
+    output = histogram_to_string(dates, bins=5)
+    assert "2002-1" in output
+    # The raw epoch seconds (~1.03e9) must not leak into the axis labels.
+    assert "1,035" not in output and "1035" not in output
+
+
 ###############################
 # Testing histogram_to_string #
 ###############################

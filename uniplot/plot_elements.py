@@ -116,6 +116,12 @@ def prepare_histogram(
     ys_histo_series = []
     for s in multi_series.ys:
         xs_barchart, ys_barchart = compute_bar_chart_histogram_points(s, bin_edges)
+        # We bin the internal float representation, so for a datetime series the
+        # bin edges come back as raw epoch seconds. Cast them back to
+        # `datetime64[s]` so the downstream plot re-detects the x-axis as a time
+        # series and renders date labels instead of raw numbers.
+        if multi_series.y_is_time_series:
+            xs_barchart = xs_barchart.astype("datetime64[s]")
         xs_histo_series.append(xs_barchart)
         ys_histo_series.append(ys_barchart)
 
