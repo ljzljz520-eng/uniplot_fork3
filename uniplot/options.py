@@ -68,6 +68,12 @@ class Options:
     y_as_log: bool = False
     # Units of x axis
     x_unit: str = ""
+    # Render x axis labels using SI prefixes, assuming `x_unit` is the base
+    # unit: e.g. with `x_unit=" m"` a label of 1,000 renders as "1 km". The
+    # prefix is inserted before the first non-whitespace character of the unit,
+    # so a leading space is preserved. A blank `x_unit` still gets a prefix
+    # (e.g. "200k").
+    x_unit_as_si: bool = False
     # Horizontal gridlines
     y_gridlines: List[float] = field(default_factory=_default_gridlines)
     # Color of horizontal gridlines
@@ -80,6 +86,12 @@ class Options:
     y_min: float = 0.0
     # Units of y axis
     y_unit: str = ""
+    # Render y axis labels using SI prefixes, assuming `y_unit` is the base
+    # unit: e.g. with `y_unit=" m"` a label of 1,000 renders as "1 km". The
+    # prefix is inserted before the first non-whitespace character of the unit,
+    # so a leading space is preserved. A blank `y_unit` still gets a prefix
+    # (e.g. "200k").
+    y_unit_as_si: bool = False
 
     def __post_init__(self):
         # Validate values

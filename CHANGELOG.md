@@ -5,6 +5,26 @@ All notable changes to uniplot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- SI unit prefixes for axis labels via the new `x_unit_as_si` / `y_unit_as_si`
+  options. When enabled, values are assumed to be in the base unit given by
+  `x_unit` / `y_unit` and labels are rendered with the appropriate SI prefix
+  (e.g. a label of `1000` with unit `" m"` becomes `1 km`, `0.003` becomes
+  `3 mm`). The prefix is inserted before the first non-whitespace character of
+  the unit, so a leading space is preserved; a blank unit still gets a prefix
+  (e.g. `200k`). On linear axes a single prefix is chosen for the whole axis,
+  anchored to the smallest nonzero label so that no label drops below 1 in the
+  chosen unit (e.g. `[250, 500, 1000]` stays in grams rather than tipping into
+  fractional kilograms). On log axes each label gets its own prefix, since the
+  labels span several orders of magnitude. Values beyond the known prefix range
+  (below yocto or above yotta) fall back to plain formatting.
+
+### Changed
+- Log-scale axis labels now render the actual values (e.g. `1.6`, `100`)
+  instead of exponent notation (`10^0.2`, `10^2`), which also fixes fractional
+  exponents previously shown as e.g. `10^-0.6`.
+
 ## [0.23.2] - 2026-07-12
 ### Fixed
 - Timestamps for histogram x-axis are correctly displayed. Thanks @rossburton

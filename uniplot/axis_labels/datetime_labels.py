@@ -35,11 +35,16 @@ def datetime_labels(
     available_space: int,
     vertical_direction: bool = False,
     unit: str = "",
+    unit_as_si: bool = False,
     log: bool = False,
     verbose: bool = False,
 ) -> Optional[DatetimeLabelSet]:
     """
     A simple way to get started with datetime labelling.
+
+    Note: `unit_as_si` is accepted only so this function is call-compatible with
+    `extended_talbot_labels` (see `sections.py`). SI prefixes do not apply to
+    timestamps, so the flag is ignored.
     """
     if log:
         # Not supported

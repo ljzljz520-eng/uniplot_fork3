@@ -143,12 +143,19 @@ In alphabetical order:
   data points.
 * `x_unit` - Unit of the x axis. This is a string that is appended to the axis
   labels. Defaults to `""`.
+* `x_unit_as_si` - Render the x axis labels using SI prefixes, assuming `x_unit`
+  is the base unit. For example, with `x_unit=" m"` a label of `1000` is shown
+  as `1 km` and `0.003` as `3 mm`. The prefix is inserted before the first
+  non-whitespace character of the unit (so a leading space is preserved), and a
+  blank unit still gets a prefix (e.g. `200k`). Defaults to `False`.
 * `y_max` - Maximum y value of the view. Defaults to a value that shows all
   data points.
 * `y_min` - Minimum y value of the view. Defaults to a value that shows all
   data points.
 * `y_unit` - Unit of the y axis. This is a string that is appended to the axis
   labels. Defaults to `""`.
+* `y_unit_as_si` - Render the y axis labels using SI prefixes, assuming `y_unit`
+  is the base unit. See `x_unit_as_si`. Defaults to `False`.
 
 #### Advanced options
 

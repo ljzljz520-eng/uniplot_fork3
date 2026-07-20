@@ -89,6 +89,7 @@ def generate_body_raw_elements(
             x_max=options.y_max,
             available_space=options.height,
             unit=options.y_unit,
+            unit_as_si=options.y_unit_as_si,
             log=options.y_as_log,
             vertical_direction=True,
         )  # type: ignore
@@ -118,6 +119,7 @@ def generate_body_raw_elements(
             x_max=options.x_max,
             available_space=options.width,
             unit=options.x_unit,
+            unit_as_si=options.x_unit_as_si,
             log=options.x_as_log,
             vertical_direction=False,
         )  # type: ignore
