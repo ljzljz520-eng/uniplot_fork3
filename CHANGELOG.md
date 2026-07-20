@@ -5,7 +5,7 @@ All notable changes to uniplot will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
 ### Added
 - SI unit prefixes for axis labels via the new `x_unit_as_si` / `y_unit_as_si`
   options. When enabled, values are assumed to be in the base unit given by
@@ -16,10 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (e.g. `200k`). On linear axes a single prefix is chosen for the whole axis,
   anchored to the smallest nonzero label so that no label drops below 1 in the
   chosen unit (e.g. `[250, 500, 1000]` stays in grams rather than tipping into
-  fractional kilograms). On log axes each label gets its own prefix, since the
-  labels span several orders of magnitude. Values beyond the known prefix range
-  (below yocto or above yotta) fall back to plain formatting.
-
+  fractional kilograms). A prefix is only applied when it does not make the
+  labels longer than the plain representation, so e.g. `0.5 °C` is kept as-is
+  rather than rewritten as `500 m°C`. On log axes each label gets its own
+  prefix, since the labels span several orders of magnitude. Values beyond the
+  known prefix range (below yocto or above yotta) fall back to plain
+  formatting.
 ### Changed
 - Log-scale axis labels now render the actual values (e.g. `1.6`, `100`)
   instead of exponent notation (`10^0.2`, `10^2`), which also fixes fractional

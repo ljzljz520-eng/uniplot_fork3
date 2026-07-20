@@ -211,6 +211,17 @@ def test_si_scales_up_when_all_labels_are_large():
     ]
 
 
+def test_si_does_not_scale_when_it_would_lengthen_labels():
+    # Values around 0.1-0.9 read fine in the base unit, so we keep "0.5 °C"
+    # rather than lengthening it to "500 m°C".
+    assert _si_label_strings([0, 0.2, 0.4, 0.6], unit=" °C") == [
+        "0.0 °C",
+        "0.2 °C",
+        "0.4 °C",
+        "0.6 °C",
+    ]
+
+
 def test_si_tiny_linear_values_scale_down():
     assert _si_label_strings([0, 0.001, 0.002, 0.003]) == [
         "0mg",

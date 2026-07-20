@@ -6,6 +6,11 @@ from uniplot.discretizer import discretize, discretize_array
 
 LEFT_MARGIN_FOR_HORIZONTAL_AXIS = 1
 
+
+def _max_length(labels: List[str]) -> int:
+    return max((len(label) for label in labels), default=0)
+
+
 # SI prefixes indexed by the power-of-1000 group, e.g. group 1 => "k" (10^3),
 # group -1 => "m" (10^-3). Group 0 is the base unit and has no prefix.
 SI_PREFIXES = {
@@ -168,7 +173,22 @@ class LabelSet:
             # to the actual values and format each one on its own.
             return [self._format_value_si(10.0**exponent) for exponent in self.labels]
 
+        base_labels = self._render_linear_labels(divisor=1.0, prefix="")
         divisor, prefix = self._si_divisor_and_prefix()
+        if prefix == "":
+            return base_labels
+
+        # Only apply the SI prefix if it does not make the labels longer than
+        # the plain representation. This keeps values like 0.5 as "0.5 °C"
+        # rather than rewriting them as "500 m°C", while still shortening e.g.
+        # 0.003 to "3 mm" and 5000 to "5 km".
+        prefixed_labels = self._render_linear_labels(divisor, prefix)
+        if _max_length(prefixed_labels) <= _max_length(base_labels):
+            return prefixed_labels
+        return base_labels
+
+    def _render_linear_labels(self, divisor: float, prefix: str) -> List[str]:
+        """Render the (non-log) labels for a given SI divisor and prefix."""
         unit = self._apply_si_prefix(prefix, self.unit)
         display_labels = self.labels if divisor == 1.0 else self.labels / divisor
         base_labels = self._find_shortest_string_representation(display_labels)

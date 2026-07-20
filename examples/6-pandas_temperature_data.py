@@ -38,6 +38,7 @@ plot(
     lines=True,
     title="Global normalized land-sea temperature anomaly",
     y_unit=" °C",
+    y_unit_as_si=True,
     legend_labels=["Temperature anomaly", "Annual variation"],
     character_set="braille",
 )
