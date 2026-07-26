@@ -1,4 +1,5 @@
 import math
+
 from uniplot import plot
 
 # Set up y axis valus based on two different shifted sine waves

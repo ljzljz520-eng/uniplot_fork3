@@ -1,9 +1,10 @@
 import argparse
 from wave import open as open_wave
+
 import numpy as np
+from readchar import readkey
 
 from uniplot import plot_gen
-from readchar import readkey
 
 MAX_FRAMES = 100_000
 MONO_DISPLAY_OFFSET = 20_000
@@ -15,11 +16,11 @@ args = parser.parse_args()
 
 
 def read_from_wave_file(file_name: str):
-    wave_file = open_wave(file_name, "rb")
-    nr_frames = wave_file.getnframes()
-    nr_channels = wave_file.getnchannels()
-    print(f"File contains {nr_frames} frame(s) and {nr_channels} channel(s).")
-    wav_frames = wave_file.readframes(min(nr_frames, MAX_FRAMES))
+    with open_wave(file_name, "rb") as wave_file:
+        nr_frames = wave_file.getnframes()
+        nr_channels = wave_file.getnchannels()
+        print(f"File contains {nr_frames} frame(s) and {nr_channels} channel(s).")
+        wav_frames = wave_file.readframes(min(nr_frames, MAX_FRAMES))
     return np.fromstring(wav_frames, dtype=np.int16)
 
 

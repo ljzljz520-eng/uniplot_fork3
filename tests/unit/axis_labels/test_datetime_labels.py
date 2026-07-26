@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 
 from uniplot.axis_labels.datetime_labels import datetime_labels
 

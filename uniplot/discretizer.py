@@ -2,9 +2,10 @@
 A collection of functions for discretizing continuous data.
 """
 
+from typing import Any
+
 import numpy as np
 from numpy.typing import NDArray
-from typing import Any
 
 from uniplot.conversions import floatify
 

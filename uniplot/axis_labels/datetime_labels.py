@@ -1,20 +1,21 @@
-import numpy as np
-from numpy.typing import NDArray
-from typing import Tuple, List, Dict, Optional, Final
 from collections import defaultdict
 from functools import lru_cache
+from typing import Final
+
+import numpy as np
+from numpy.typing import NDArray
 
 from uniplot.axis_labels.datetime_label_set import DatetimeLabelSet
 from uniplot.axis_labels.extended_talbot_labels import (
-    _compute_preferred_number_of_labels,
     _compute_coverage_score,
     _compute_density_score,
+    _compute_preferred_number_of_labels,
 )
 
 DIGIT_TIME_UNITS: Final = ["Y", "M", "D", "h", "m", "s"]
 
 # Preference-ordered list of "nice" numbers
-Q_VALUES: Final[Dict[str, List]] = defaultdict(
+Q_VALUES: Final[dict[str, list]] = defaultdict(
     lambda: [1, 5, 2, 4, 3],
     {
         "M": [1, 4, 3, 2],
@@ -38,7 +39,7 @@ def datetime_labels(
     unit_scaling: str = "",
     log: bool = False,
     verbose: bool = False,
-) -> Optional[DatetimeLabelSet]:
+) -> DatetimeLabelSet | None:
     """
     A simple way to get started with datetime labelling.
 
@@ -47,8 +48,7 @@ def datetime_labels(
     apply to timestamps, so the option is ignored.
     """
     if log:
-        # Not supported
-        raise
+        raise ValueError("Logarithmic scaling is not supported for datetime labels")
 
     x_min_as_dt = np.float64(x_min).astype("datetime64[s]")
     x_max_as_dt = np.float64(x_max).astype("datetime64[s]")
@@ -58,7 +58,7 @@ def datetime_labels(
             f"datetime_labels: x_min={x_min_as_dt}, x_max={x_max_as_dt}, vertical_direction={vertical_direction}"
         )
 
-    result: Optional[DatetimeLabelSet] = None
+    result: DatetimeLabelSet | None = None
     best_score: float = -2.0
 
     data_range = np.timedelta64(x_max_as_dt - x_min_as_dt)
@@ -139,7 +139,7 @@ def datetime_labels(
 ###########
 
 
-def _compute_pseudo_exponent(d_range) -> Tuple[int, str]:
+def _compute_pseudo_exponent(d_range) -> tuple[int, str]:
     for i, unit in enumerate(DIGIT_TIME_UNITS):
         td = _timedelta(1, unit)
         if d_range > td:

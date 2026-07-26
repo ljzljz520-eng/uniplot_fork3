@@ -1,12 +1,12 @@
 import sys
+from typing import Any, Final
+
 import numpy as np
 from numpy.typing import NDArray
-from typing import List, Tuple, Optional, Final, Any
 
+from uniplot import colors
 from uniplot.character_sets import CharacterSet
 from uniplot.legend_placements import LegendPlacement
-import uniplot.colors as colors
-
 
 CURSOR_UP_ONE: Final = "\x1b[1A"
 ERASE_LINE: Final = "\x1b[2K"
@@ -15,11 +15,11 @@ LEGEND_VERTICAL_SPACING: Final = 3
 
 
 def legend(
-    legend_labels: List[str],
+    legend_labels: list[str],
     width: int,
-    line_length_hard_cap: Optional[int],
-    color: Optional[List[colors.Color]],
-    force_ascii_characters: List[str] = [],
+    line_length_hard_cap: int | None,
+    color: list[colors.Color] | None,
+    force_ascii_characters: list[str] | None = None,
     character_set: CharacterSet = CharacterSet.BLOCK,
     legend_placement: LegendPlacement = LegendPlacement.AUTO,
 ) -> str:
@@ -28,8 +28,10 @@ def legend(
     """
     if len(legend_labels) == 0:
         return ""
+    if force_ascii_characters is None:
+        force_ascii_characters = []
 
-    label_strings: List[str] = []
+    label_strings: list[str] = []
     for i, legend in enumerate(legend_labels):
         symbol: str = "█"
         if character_set == CharacterSet.ASCII:
@@ -69,7 +71,7 @@ def legend(
     return _center_block_if_possible(full_label_string, width + 2, line_length_hard_cap)
 
 
-def plot_title(title: str, width: int, line_length_hard_cap: Optional[int]) -> str:
+def plot_title(title: str, width: int, line_length_hard_cap: int | None) -> str:
     """
     Returns the centered title string.
 
@@ -91,9 +93,9 @@ def erase_previous_lines(nr_lines: int) -> None:
 def prepare_histogram(
     multi_series: Any,
     bins: int = 20,
-    bins_min: Optional[float] = None,
-    bins_max: Optional[float] = None,
-) -> Tuple[List, List]:
+    bins_min: float | None = None,
+    bins_max: float | None = None,
+) -> tuple[list, list]:
     bins_min_real: float = bins_min if bins_min is not None else multi_series.y_min()
     bins_max_real: float = bins_max if bins_max is not None else multi_series.y_max()
     assert bins_max_real > bins_min_real
@@ -129,8 +131,8 @@ def prepare_histogram(
 
 
 def compute_bar_chart_histogram_points(
-    values: NDArray, bin_edges: List[float]
-) -> Tuple:
+    values: NDArray, bin_edges: list[float]
+) -> tuple:
     """
     Given an input Numpy array `values`, this computes the histogram according
     to the provided `bin_edges` and returns the points that form a bar chart
@@ -158,7 +160,7 @@ def count_lines(text: str) -> int:
 
 
 def _center_each_line_if_possible(
-    text: str, width: int, line_length_hard_cap: Optional[int]
+    text: str, width: int, line_length_hard_cap: int | None
 ) -> str:
     lines = text.splitlines()
     centered_lines = [
@@ -171,7 +173,7 @@ def _center_each_line_if_possible(
 
 
 def _center_block_if_possible(
-    text: str, width: int, line_length_hard_cap: Optional[int]
+    text: str, width: int, line_length_hard_cap: int | None
 ) -> str:
     """
     This centers the input `text` by adding left padding if the width of all
@@ -201,7 +203,7 @@ def _effective_len(text: str) -> int:
 
 
 def _colorize_char(
-    char: str, color_nr: int, color_mode: Optional[List[colors.Color]]
+    char: str, color_nr: int, color_mode: list[colors.Color] | None
 ) -> str:
     if char == "" or (not color_mode) or color_nr < 1:
         return char
@@ -209,7 +211,7 @@ def _colorize_char(
     return color.colorize(char)
 
 
-def _histogram_to_bar_chart_points(bin_edges, counts) -> Tuple:
+def _histogram_to_bar_chart_points(bin_edges, counts) -> tuple:
     bins = len(bin_edges) - 1
     # Draw vertical and horizontal lines to connect points
     xs_here = np.zeros(1 + 2 * bins + 1)

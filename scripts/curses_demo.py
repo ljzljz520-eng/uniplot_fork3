@@ -1,7 +1,9 @@
-from uniplot import plot_to_string
-import time
 import curses
+import time
+
 import numpy as np
+
+from uniplot import plot_to_string
 
 ys = np.sin(np.linspace(1, 200))
 

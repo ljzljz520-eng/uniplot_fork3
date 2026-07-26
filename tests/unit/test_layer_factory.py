@@ -1,8 +1,8 @@
 import numpy as np
 
-from uniplot.layer_factory import render_points
-from uniplot.options import Options, CharacterSet
 from uniplot.colors import Color
+from uniplot.layer_factory import render_points
+from uniplot.options import CharacterSet, Options
 
 
 def test_ascii_characters_without_color():

@@ -1,8 +1,9 @@
 # Example adapted from matplotlib documentation
 # Ref.: https://matplotlib.org/stable/gallery/pie_and_polar_charts/polar_demo.html
 
-from uniplot import plot
 import numpy as np
+
+from uniplot import plot
 
 # Define spiral in polar corrdinates
 r = np.arange(0, 2, 0.01)

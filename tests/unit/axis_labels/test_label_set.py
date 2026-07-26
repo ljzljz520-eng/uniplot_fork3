@@ -1,6 +1,6 @@
 import numpy as np
 
-from uniplot.axis_labels.label_set import LabelSet, SI_PREFIXES
+from uniplot.axis_labels.label_set import SI_PREFIXES, LabelSet
 
 
 def test_redering_to_string():

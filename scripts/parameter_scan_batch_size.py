@@ -1,9 +1,10 @@
-import resource
 import gc
+import resource
 from functools import partial
+from time import time
 
 import numpy as np
-from time import time
+
 from uniplot import plot
 from uniplot.pixel_matrix import render
 

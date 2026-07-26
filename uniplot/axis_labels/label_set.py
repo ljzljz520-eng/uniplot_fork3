@@ -1,13 +1,12 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import List
 
 from uniplot.discretizer import discretize, discretize_array
 
 LEFT_MARGIN_FOR_HORIZONTAL_AXIS = 1
 
 
-def _max_length(labels: List[str]) -> int:
+def _max_length(labels: list[str]) -> int:
     return max((len(label) for label in labels), default=0)
 
 
@@ -66,11 +65,11 @@ class LabelSet:
         self.available_space = available_space
         self.vertical_direction = vertical_direction
         self._results_already_in_cache: bool = False
-        self._rendered_result: List[str] = []
+        self._rendered_result: list[str] = []
         self._render_does_overlap: bool = False
         self._spacing_is_regular: bool = True
 
-    def render(self) -> List[str]:
+    def render(self) -> list[str]:
         self._render_and_measure_to_cache()
         return self._rendered_result
 
@@ -99,7 +98,7 @@ class LabelSet:
 
         if self.vertical_direction:
             # So this is for the y axis case
-            lines: List[str] = [""] * self.available_space
+            lines: list[str] = [""] * self.available_space
 
             indices = (
                 self.available_space
@@ -164,7 +163,7 @@ class LabelSet:
             self._rendered_result = [line]
         self._results_already_in_cache = True
 
-    def _compute_label_strings(self) -> List[str]:
+    def _compute_label_strings(self) -> list[str]:
         """
         Compute the final label strings, including units.
 
@@ -192,14 +191,14 @@ class LabelSet:
             return prefixed_labels
         return base_labels
 
-    def _render_linear_labels(self, divisor: float, prefix: str) -> List[str]:
+    def _render_linear_labels(self, divisor: float, prefix: str) -> list[str]:
         """Render the (non-log) labels for a given SI divisor and prefix."""
         unit = self._apply_si_prefix(prefix, self.unit)
         display_labels = self.labels if divisor == 1.0 else self.labels / divisor
         base_labels = self._find_shortest_string_representation(display_labels)
         return [b + unit for b in base_labels]
 
-    def _find_shortest_string_representation(self, labels=None) -> List[str]:
+    def _find_shortest_string_representation(self, labels=None) -> list[str]:
         """
         This method will find the shortest numerical values for axis labels
         that are different from each other.
@@ -279,7 +278,7 @@ class LabelSet:
         Ref.: https://docs.python.org/3.8/library/string.html#format-specification-mini-language
         """
         if nr_digits == 0:
-            return ("{:,d}").format(round(n))
+            return f"{round(n):,d}"
         return ("{:,." + str(nr_digits) + "f}").format(float(n))
 
     def _format_value_si(self, value: float) -> str:

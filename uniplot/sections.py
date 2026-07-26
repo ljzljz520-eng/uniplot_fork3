@@ -1,15 +1,14 @@
 from numpy.typing import NDArray
-from typing import Tuple, List
 
+import uniplot.plot_elements as elements
+from uniplot import layer_assembly
+from uniplot.axis_labels.datetime_labels import datetime_labels
+from uniplot.axis_labels.extended_talbot_labels import extended_talbot_labels
 from uniplot.multi_series import MultiSeries
 from uniplot.options import Options
-import uniplot.layer_assembly as layer_assembly
-import uniplot.plot_elements as elements
-from uniplot.axis_labels.extended_talbot_labels import extended_talbot_labels
-from uniplot.axis_labels.datetime_labels import datetime_labels
 
 
-def generate_header(options: Options) -> List[str]:
+def generate_header(options: Options) -> list[str]:
     """
     Generates the header of the plot, so everything above the first line of
     plottable area.
@@ -28,15 +27,15 @@ def generate_header(options: Options) -> List[str]:
 
 def generate_body(
     x_axis_labels: str,
-    y_axis_labels: List[str],
+    y_axis_labels: list[str],
     pixel_character_matrix: NDArray,
     options: Options,
-) -> List[str]:
+) -> list[str]:
     """
     Generates the body of the plot.
     """
 
-    lines: List[str] = []
+    lines: list[str] = []
     # Top
     if options.rounded_corners:
         lines.append(f"╭{'─' * options.width}╮")
@@ -74,7 +73,7 @@ def generate_body(
 
 def generate_body_raw_elements(
     series: MultiSeries, options: Options
-) -> Tuple[str, List[str], NDArray]:
+) -> tuple[str, list[str], NDArray]:
     """
     Generates the x-axis labels, y-axis labels, and the pixel character matrix.
     """
@@ -106,7 +105,7 @@ def generate_body_raw_elements(
             # Overflow, so we need to reduce width of plot area
             options.width = options.line_length_hard_cap - (2 + 1 + max_y_label_length)
             if options.width < 1:
-                raise
+                raise ValueError("`width` must be greater than zero.")
 
     # Prepare x axis labels
     x_axis_labels = ""

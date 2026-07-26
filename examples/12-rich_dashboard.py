@@ -18,9 +18,9 @@ Requires the optional `rich` dependency plus `psutil`:
 """
 
 import argparse
-from collections import deque
 import datetime
 import time
+from collections import deque
 
 import psutil
 from rich.console import Group
@@ -44,9 +44,13 @@ INTERVAL = 0.5  # seconds between samples
 # 0..100 (pinned bounds are preserved across updates); network throughput
 # auto-ranges, with only the lower bound pinned to zero. Braille gives the
 # highest resolution and a sleek look.
-style = dict(
-    lines=True, height=8, character_set="braille", x_gridlines=[], y_gridlines=[]
-)
+style = {
+    "lines": True,
+    "height": 8,
+    "character_set": "braille",
+    "x_gridlines": [],
+    "y_gridlines": [],
+}
 cpu_plot = plot_gen(y_min=0, y_max=100, y_unit="%", color=["cyan"], **style)
 mem_plot = plot_gen(y_min=0, y_max=100, y_unit="%", color=["magenta"], **style)
 net_plot = plot_gen(
@@ -81,7 +85,9 @@ with Live(dashboard, refresh_per_second=4):
         up = (now.bytes_sent - prev.bytes_sent) / 1024 / INTERVAL
         prev = now
 
-        time_hist.append(datetime.datetime.now())
+        # Naive on purpose: NumPy's `datetime64` has no representation for
+        # timezones, and warns when given an aware datetime.
+        time_hist.append(datetime.datetime.now())  # noqa: DTZ005
         cpu_hist.append(cpu)
         mem_hist.append(mem)
         down_hist.append(down)

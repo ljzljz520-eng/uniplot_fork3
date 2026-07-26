@@ -1,7 +1,7 @@
+from typing import Final
+
 import numpy as np
 from numpy.typing import NDArray
-from typing import Optional, Final
-
 
 BATCH_SIZE: Final = 10_000
 
@@ -16,7 +16,7 @@ def render(
     width: int,
     height: int,
     lines: bool = False,
-    pixels: Optional[NDArray] = None,
+    pixels: NDArray | None = None,
     layer: int = 1,
     batch_size: int = BATCH_SIZE,
 ):
@@ -108,7 +108,7 @@ def _render_batch_of_dots(
     y_max: float,
     width: int,
     height: int,
-    pixels: Optional[NDArray] = None,
+    pixels: NDArray | None = None,
     layer: int = 1,
 ) -> NDArray:
     if pixels is None:
@@ -150,7 +150,7 @@ try:
         y_max: float,
         width: int,
         height: int,
-        pixels: Optional[NDArray] = None,
+        pixels: NDArray | None = None,
         layer: int = 1,
     ) -> NDArray:
         if pixels is None:
@@ -263,7 +263,7 @@ except ImportError:
         y_max: float,
         width: int,
         height: int,
-        pixels: Optional[NDArray] = None,
+        pixels: NDArray | None = None,
         layer: int = 1,
     ) -> NDArray:
         if pixels is None:

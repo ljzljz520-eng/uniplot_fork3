@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Tuple, Optional, Any, Final
+from typing import Any, Final
 
 # Ref.: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
 ANSI_COLOR_CODES: Final = {
@@ -27,8 +27,8 @@ class Color:
     with ANSI escape code generation support.
     """
 
-    terminal_color: Optional[str] = None
-    rgb: Optional[Tuple[int, int, int]] = None
+    terminal_color: str | None = None
+    rgb: tuple[int, int, int] | None = None
 
     def __post_init__(self):
         count = sum(x is not None for x in (self.terminal_color, self.rgb))
@@ -43,7 +43,7 @@ class Color:
             return cls.from_terminal(color_data)
         if isinstance(color_data, tuple) and len(color_data) == 3:
             return cls.from_rgb(*color_data)
-        if color_data == False:  # noqa: E712
+        if color_data == False:
             return Color(terminal_color=None, rgb=None)
         raise TypeError(f"Unsupported color: {color_data}")
 

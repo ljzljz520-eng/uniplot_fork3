@@ -1,7 +1,7 @@
 import pytest
 
-from uniplot.param_initializer import validate_and_transform_options
 from uniplot.multi_series import MultiSeries
+from uniplot.param_initializer import validate_and_transform_options
 
 
 def test_passing_simple_list():

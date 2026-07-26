@@ -3,8 +3,8 @@ Plotting with polars is such a common use case in data science that we want to
 make sure it works nicely with uniplot. Thus these tests.
 """
 
-import polars as pl
 import numpy as np  # type: ignore
+import polars as pl
 
 from uniplot import plot
 

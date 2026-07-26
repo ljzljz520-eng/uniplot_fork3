@@ -4,6 +4,7 @@
 # [Our World in Data GitHub repository](https://github.com/owid/owid-datasets).
 
 import pandas as pd
+
 from uniplot import plot
 
 INPUT_CSV_URI = "https://github.com/owid/owid-datasets/raw/master/datasets/Global%20average%20temperature%20anomaly%20-%20Hadley%20Centre/Global%20average%20temperature%20anomaly%20-%20Hadley%20Centre.csv"

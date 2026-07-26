@@ -1,20 +1,19 @@
 import numpy as np
-from typing import Dict
 
-from uniplot.multi_series import MultiSeries
-from uniplot.options import Options, CharacterSet
-from uniplot.conversions import floatify
-from uniplot.colors import Color
-from uniplot.color_themes import COLOR_THEMES
-from uniplot.legend_placements import LegendPlacement
 from uniplot.axis_labels.label_set import VALID_UNIT_SCALINGS
+from uniplot.color_themes import COLOR_THEMES
+from uniplot.colors import Color
+from uniplot.conversions import floatify
+from uniplot.legend_placements import LegendPlacement
+from uniplot.multi_series import MultiSeries
+from uniplot.options import CharacterSet, Options
 
 AUTO_WINDOW_ENLARGE_FACTOR = 0.001
 
 
 def validate_and_transform_options(
     series: MultiSeries,
-    kwargs: Dict = {},
+    kwargs: dict | None = None,
     bounds_already_in_plot_space: frozenset = frozenset(),
 ) -> Options:
     """
@@ -34,6 +33,9 @@ def validate_and_transform_options(
     are already in plot space, i.e. pinned bounds that were re-injected from a
     previous render. For those we must not apply the `log10` transform again.
     """
+    if kwargs is None:
+        kwargs = {}
+
     # First, some cleanup, including converting datetimes to float
     for key in ["x_min", "x_max", "y_min", "y_max"]:
         if key in kwargs:

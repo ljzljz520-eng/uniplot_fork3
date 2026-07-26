@@ -1,4 +1,5 @@
 import numpy as np
+
 from uniplot import plot
 
 # Set up x and y coordinates, where x coordinates are NumPy datetime64 time stamps

@@ -1,8 +1,7 @@
-import pytest
 import numpy as np
+import pytest
 
-from uniplot.pixel_matrix import render, merge_on_top
-
+from uniplot.pixel_matrix import merge_on_top, render
 
 ###################
 # Testing: render #

@@ -1,6 +1,7 @@
-from uniplot import plot
 import numpy as np
 from pyinstrument import profile
+
+from uniplot import plot
 
 print("Warming up ....")
 ys = np.random.random(10)

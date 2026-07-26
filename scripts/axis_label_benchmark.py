@@ -1,5 +1,5 @@
-import timeit
 import random
+import timeit
 
 from uniplot.axis_labels.extended_talbot_labels import extended_talbot_labels
 

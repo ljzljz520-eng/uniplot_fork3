@@ -1,14 +1,14 @@
 import threading
-from typing import Dict, Optional, Final, Any, Tuple, TYPE_CHECKING
-import numpy as np
-from readchar import readkey, key
+from typing import TYPE_CHECKING, Any, Final
 
+import numpy as np
+from readchar import key, readkey
+
+import uniplot.plot_elements as elements
+from uniplot import colors, sections
 from uniplot.multi_series import MultiSeries
 from uniplot.options import Options
 from uniplot.param_initializer import validate_and_transform_options
-import uniplot.colors as colors
-import uniplot.sections as sections
-import uniplot.plot_elements as elements
 
 if TYPE_CHECKING:
     from rich.console import Console, ConsoleOptions, RenderResult
@@ -17,10 +17,10 @@ if TYPE_CHECKING:
 # The four view-window bounds, tracked separately from other options because
 # they can be "pinned" (preserved across updates) by an explicit option or by
 # interactive pan/zoom, while everything else auto-ranges from the data.
-_BOUND_KEYS: Final[Tuple[str, ...]] = ("x_min", "x_max", "y_min", "y_max")
+_BOUND_KEYS: Final[tuple[str, ...]] = ("x_min", "x_max", "y_min", "y_max")
 
 
-def plot(ys: Any, xs: Optional[Any] = None, **kwargs) -> None:
+def plot(ys: Any, xs: Any | None = None, **kwargs) -> None:
     """
     2D plot on the terminal.
 
@@ -110,10 +110,10 @@ class plot_gen:
         self._pinned_bounds: set = set()
         # Explicit bound values supplied but not yet applied (carried across
         # coalesced updates until the next recompute).
-        self._pending_bound_values: Dict = {}
+        self._pending_bound_values: dict = {}
         # Non-data, non-bound options that persist across updates (e.g. `title`,
         # `color`, `lines`, `width`), so a data-only `update(ys=...)` keeps them.
-        self._option_kwargs: Dict = {}
+        self._option_kwargs: dict = {}
         # Whether new data/options have been ingested since the last recompute.
         self._dirty: bool = False
         self.last_nr_of_lines: int = 0
@@ -170,7 +170,7 @@ class plot_gen:
         """
         self._ingest(kwargs, copy=copy)
 
-    def to_string(self, max_width: Optional[int] = None) -> str:
+    def to_string(self, max_width: int | None = None) -> str:
         """
         Return the current plot as a string, without printing.
         """
@@ -191,7 +191,7 @@ class plot_gen:
         self.last_nr_of_lines += elements.count_lines(text)
         print(text)
 
-    def _ingest(self, kwargs: Dict, copy: bool = True) -> None:
+    def _ingest(self, kwargs: dict, copy: bool = True) -> None:
         """
         Record new data/options cheaply and mark the plot dirty. The expensive
         recompute is deferred to the next render (`_recompute`), so a high-rate
@@ -271,7 +271,7 @@ class plot_gen:
         # explicit bounds + re-injected pinned bounds. Re-injected bounds come
         # from `self.options` and are therefore already in plot space, so the
         # validator must not transform them again.
-        merged: Dict = dict(self._option_kwargs)
+        merged: dict = dict(self._option_kwargs)
         merged.update(explicit)
         reinjected = set()
         for b in self._pinned_bounds:
@@ -286,7 +286,7 @@ class plot_gen:
         )
         self._pending_bound_values = {}
 
-    def _render(self, max_width: Optional[int] = None) -> str:
+    def _render(self, max_width: int | None = None) -> str:
         """
         The single render path: turn the current state into the plot string,
         without printing, erasing, or permanently mutating the options. Applies
@@ -375,7 +375,7 @@ class plot_gen:
         return Measurement(min(natural, options.max_width), natural)
 
 
-def plot_to_string(ys: Any, xs: Optional[Any] = None, **kwargs) -> str:
+def plot_to_string(ys: Any, xs: Any | None = None, **kwargs) -> str:
     """
     Same as `plot`, but the return type is string. Ignores the `interactive`
     option.
@@ -394,8 +394,8 @@ def plot_to_string(ys: Any, xs: Optional[Any] = None, **kwargs) -> str:
 def histogram(
     xs: Any,
     bins: int = 20,
-    bins_min: Optional[float] = None,
-    bins_max: Optional[float] = None,
+    bins_min: float | None = None,
+    bins_max: float | None = None,
     **kwargs,
 ) -> None:
     """
@@ -423,8 +423,8 @@ def histogram(
 def histogram_to_string(
     xs: Any,
     bins: int = 20,
-    bins_min: Optional[float] = None,
-    bins_max: Optional[float] = None,
+    bins_min: float | None = None,
+    bins_max: float | None = None,
     **kwargs,
 ) -> str:
     """
@@ -489,6 +489,7 @@ def _defensive_copy(value: Any) -> Any:
     if callable(copy_method):
         try:
             return copy_method()
-        except Exception:
-            pass
+        except (TypeError, ValueError):
+            # An unusable `.copy()`; fall back to the value itself.
+            return value
     return value

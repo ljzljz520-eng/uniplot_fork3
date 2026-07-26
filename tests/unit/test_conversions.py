@@ -3,7 +3,6 @@ from numpy.testing import assert_equal
 
 from uniplot.conversions import convert_matrix_to_rows_of_submatrices
 
-
 #################################################
 # testing: convert_matrix_to_rows_of_submatices #
 #################################################

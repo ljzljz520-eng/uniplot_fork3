@@ -1,14 +1,11 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import List, Tuple
 
-import uniplot.pixel_matrix as pixel_matrix
-import uniplot.character_sets as character_sets
-from uniplot.conversions import convert_matrix_to_rows_of_submatrices
-from uniplot.options import Options, CharacterSet
-from uniplot.discretizer import discretize
+from uniplot import character_sets, pixel_matrix
 from uniplot.colors import COLOR_RESET_CODE
-
+from uniplot.conversions import convert_matrix_to_rows_of_submatrices
+from uniplot.discretizer import discretize
+from uniplot.options import CharacterSet, Options
 
 Y_GRIDLINE_CHARACTERS = ["▔", "─", "▁"]
 
@@ -83,7 +80,7 @@ def render_vertical_gridline(x: float, options: Options, index: int = 0) -> NDAr
     return pixels
 
 
-def render_points(xs: List[NDArray], ys: List[NDArray], options: Options) -> NDArray:
+def render_points(xs: list[NDArray], ys: list[NDArray], options: Options) -> NDArray:
     # Setup: determine submatrix size, encoder, and character list
     scale_w, scale_h, encoder, char_list = _set_up_submatrix_shape_and_encoders(options)
     full_width = scale_w * options.width
@@ -173,7 +170,7 @@ def _init_character_matrix(width: int, height: int, value: str = "") -> NDArray:
 
 def _set_up_submatrix_shape_and_encoders(
     options: Options,
-) -> Tuple[int, int, NDArray, List[str]]:
+) -> tuple[int, int, NDArray, list[str]]:
     if options.character_set == CharacterSet.ASCII:
         return (1, 1, np.array([1], ndmin=3), [" "] + options.force_ascii_characters)
     if options.character_set == CharacterSet.BRAILLE:

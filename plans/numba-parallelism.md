@@ -66,11 +66,11 @@ The current pixel generation loop cannot use `prange` because of the shared `idx
 
 ```python
 idx = 0
-for i in range(len(x0)):   # <-- range, not prange
+for i in range(len(x0)):  # <-- range, not prange
     ...
     for step in range(n):
         x_all[idx] = ...
-        idx += 1            # each iteration depends on previous idx
+        idx += 1  # each iteration depends on previous idx
 ```
 
 ### The Solution: Prefix Sum
@@ -103,7 +103,7 @@ Note: the prefix sum itself must stay sequential (Numba does not provide a paral
 x_all = np.empty(total_pixels, dtype=np.float64)
 y_all = np.empty(total_pixels, dtype=np.float64)
 
-for i in prange(len(x0)):          # <-- prange: no shared state
+for i in prange(len(x0)):  # <-- prange: no shared state
     start = offsets[i]
     # ... steep/shallow line logic writes to x_all[start:start+counts[i]]
 ```

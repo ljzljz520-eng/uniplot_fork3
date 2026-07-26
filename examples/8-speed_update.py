@@ -1,7 +1,8 @@
-from uniplot import plot_gen
-from collections import deque
-import time
 import math
+import time
+from collections import deque
+
+from uniplot import plot_gen
 
 
 def wave_generator(a1=1, frequency=1, phase_shift=0.4, f2=6.1343):

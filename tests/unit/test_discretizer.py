@@ -1,13 +1,12 @@
 import numpy as np
 
 from uniplot.discretizer import (
+    compute_y_at_middle_of_row,
     discretize,
     discretize_array,
-    compute_y_at_middle_of_row,
     invert_discretize,
     invert_discretize_array,
 )
-
 
 ####################
 # Test: discretize #

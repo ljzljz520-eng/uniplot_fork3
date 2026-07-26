@@ -1,20 +1,19 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from uniplot.character_sets import ASCII_CHARACTER_SET, CharacterSet
 from uniplot.colors import Color
 from uniplot.legend_placements import LegendPlacement
 
 
-def _default_gridlines() -> List[float]:
+def _default_gridlines() -> list[float]:
     return [0.0]
 
 
-def _default_lines() -> List[bool]:
+def _default_lines() -> list[bool]:
     return [False]
 
 
-def _default_ascii_characters() -> List[str]:
+def _default_ascii_characters() -> list[str]:
     return ASCII_CHARACTER_SET
 
 
@@ -30,34 +29,34 @@ class Options:
     # Character set
     character_set: CharacterSet = CharacterSet.BLOCK
     # Color mode
-    color: Optional[List[Color]] = None
+    color: list[Color] | None = None
     # List of characters to use when plotting in force_ascii mode.
-    force_ascii_characters: List[str] = field(default_factory=_default_ascii_characters)
+    force_ascii_characters: list[str] = field(default_factory=_default_ascii_characters)
     # Height of the plotting region, in lines
     height: int = 17
     # Interactive mode
     interactive: bool = False
     # Labels for the series
-    legend_labels: Optional[List[str]] = None
+    legend_labels: list[str] | None = None
     # Legend placement
     legend_placement: LegendPlacement = LegendPlacement.AUTO
     # Draw lines between points
-    lines: List[bool] = field(default_factory=_default_lines)
+    lines: list[bool] = field(default_factory=_default_lines)
     # Enforce a hard limit on the number of characters per line. This may
     # override the `width` option if there is not enough space.
-    line_length_hard_cap: Optional[int] = None
+    line_length_hard_cap: int | None = None
     # Rounded corners
     rounded_corners: bool = False
     # Title of the plot
-    title: Optional[str] = None
+    title: str | None = None
     # Width of the plotting region, in characters
     width: int = 60
     # Plot x axis with log scale
     x_as_log: bool = False
     # Vertical gridlines
-    x_gridlines: List[float] = field(default_factory=_default_gridlines)
+    x_gridlines: list[float] = field(default_factory=_default_gridlines)
     # Color of vertical gridlines
-    x_gridlines_color: Optional[List[Color]] = None
+    x_gridlines_color: list[Color] | None = None
     # Enable x axis labels
     x_labels: bool = True
     # Maximum x value of the current view
@@ -75,9 +74,9 @@ class Options:
     # leading space is preserved; a blank `x_unit` still gets a prefix ("200k").
     x_unit_scaling: str = ""
     # Horizontal gridlines
-    y_gridlines: List[float] = field(default_factory=_default_gridlines)
+    y_gridlines: list[float] = field(default_factory=_default_gridlines)
     # Color of horizontal gridlines
-    y_gridlines_color: Optional[List[Color]] = None
+    y_gridlines_color: list[Color] | None = None
     # Enable y axis labels
     y_labels: bool = True
     # Maximum y value of the current view

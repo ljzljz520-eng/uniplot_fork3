@@ -1,6 +1,5 @@
-from uniplot.plot_elements import legend, plot_title, count_lines
 from uniplot.legend_placements import LegendPlacement
-
+from uniplot.plot_elements import count_lines, legend, plot_title
 
 ###################
 # Testing: legend #

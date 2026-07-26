@@ -9,8 +9,8 @@ In CI the no-numba job runs without numba installed, so no patching is needed
 and the fallback is used automatically.
 """
 
-import sys
 import importlib
+import sys
 
 import numpy as np
 import pytest

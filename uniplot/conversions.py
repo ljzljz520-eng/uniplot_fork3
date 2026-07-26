@@ -1,5 +1,6 @@
 import datetime
 from typing import Any
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -19,7 +20,7 @@ def floatify(x: Any) -> float:
             return x.astype("datetime64[s]").astype(float)
         return float(x)
     except AttributeError:
-        if isinstance(x, datetime.datetime) or isinstance(x, datetime.date):
+        if isinstance(x, (datetime.datetime, datetime.date)):
             return np.datetime64(x).astype("datetime64[s]").astype(float)
         return float(x)
 

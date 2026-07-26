@@ -55,8 +55,10 @@ and the options below to select the character set.
 
 ```python
 import math
+
 x = [math.sin(i / 20) + i / 300 for i in range(600)]
 from uniplot import plot
+
 plot(x, title="Sine wave")
 ```
 
@@ -199,6 +201,7 @@ the following example:
 ```python
 from functools import partial
 from uniplot import plot as default_plot
+
 plot = partial(default_plot, height=25, width=80)
 ```
 
@@ -229,8 +232,10 @@ Example:
 
 ```python
 import numpy as np
+
 x = np.sin(np.linspace(1, 1000))
 from uniplot import histogram
+
 histogram(x)
 ```
 
@@ -352,7 +357,7 @@ ys = []
 with Live(plt, refresh_per_second=10) as live:
     for i in range(400):
         ys.append(math.sin(i / 10))
-        plt.set_data(ys=ys[-100:])   # high-rate updates; no printing
+        plt.set_data(ys=ys[-100:])  # high-rate updates; no printing
         time.sleep(0.005)
 ```
 

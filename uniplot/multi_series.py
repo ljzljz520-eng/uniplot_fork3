@@ -1,7 +1,7 @@
+from typing import Any
+
 import numpy as np
 from numpy.typing import NDArray
-
-from typing import List, Any
 
 
 class MultiSeries:
@@ -15,8 +15,8 @@ class MultiSeries:
 
     def __init__(self, ys, xs=None) -> None:
         # Init types
-        self.xs: List[NDArray] = []
-        self.ys: List[NDArray] = []
+        self.xs: list[NDArray] = []
+        self.ys: list[NDArray] = []
 
         # First check if the input is multi-dim
         self.is_multi_dimensional: bool = _is_multi_dimensional(ys)
@@ -26,7 +26,7 @@ class MultiSeries:
 
         # Initialize y series
         if self.is_multi_dimensional:
-            self.y_is_time_series = all([_is_time_series(y) for y in ys])
+            self.y_is_time_series = all(_is_time_series(y) for y in ys)
             if self.y_is_time_series:
                 self.ys = [_cast_as_numpy_time_series(ys_row) for ys_row in ys]
             else:
@@ -45,7 +45,7 @@ class MultiSeries:
             self.xs = [np.arange(1, len(y) + 1, step=1, dtype=int) for y in self.ys]
         else:
             if self.is_multi_dimensional:
-                self.x_is_time_series = all([_is_time_series(x) for x in xs])
+                self.x_is_time_series = all(_is_time_series(x) for x in xs)
 
                 if self.x_is_time_series:
                     self.xs = [_cast_as_numpy_time_series(xs_row) for xs_row in xs]
@@ -74,7 +74,7 @@ class MultiSeries:
     def __str__(self) -> str:
         return f"MultiSeries(xs={self.xs}, ys={self.ys}, is_multi_dimensional={self.is_multi_dimensional}, x_is_time_series={self.x_is_time_series}, y_is_time_series={self.y_is_time_series})"
 
-    def shape(self) -> List[int]:
+    def shape(self) -> list[int]:
         """
         Return a list with the length of the time series.
         """
@@ -148,7 +148,7 @@ def _is_time_series(series: Any) -> bool:
         # if "datetime64" works.
         np_array.astype("datetime64")
         return True
-    except Exception:
+    except (ValueError, TypeError):
         return False
 
 
@@ -188,11 +188,11 @@ def _safe_max(array: NDArray) -> float:
     return array[~np.isnan(array)].max()
 
 
-def _safe_maxs(series: List) -> float:
+def _safe_maxs(series: list) -> float:
     return max([_safe_max(row) for row in series if len(row) > 0])
 
 
-def _safe_mins(series: List) -> float:
+def _safe_mins(series: list) -> float:
     return min([_safe_min(row) for row in series if len(row) > 0])
 
 

@@ -9,10 +9,10 @@ from uniplot import plot_gen
 
 # All tests here need rich; skip the whole module if it is not installed.
 rich = pytest.importorskip("rich")
-from rich.console import Console  # noqa: E402
-from rich.columns import Columns  # noqa: E402
-from rich.measure import Measurement  # noqa: E402
-from rich.panel import Panel  # noqa: E402
+from rich.columns import Columns
+from rich.console import Console
+from rich.measure import Measurement
+from rich.panel import Panel
 
 ANSI_ESCAPE = re.compile(r"\033\[[\d;]+m")
 YS = [1, 2, 4, 3, 5, 2]
@@ -104,6 +104,7 @@ def test_single_render_path_equivalence():
 
 def test_live_smoke(monkeypatch):
     import io
+
     from rich.live import Live
 
     console = Console(file=io.StringIO(), width=80, force_terminal=True)

@@ -1,6 +1,6 @@
+import datetime
 import random
 import time
-import datetime
 
 from uniplot import plot_gen
 
@@ -14,8 +14,9 @@ ys = []
 plt = plot_gen(width=100, lines=True, color=True)
 
 for _ in range(MAX_SECONDS):
-    # Append current time stamp
-    xs.append(datetime.datetime.now())
+    # Append current time stamp. Naive on purpose: NumPy's `datetime64` has no
+    # representation for timezones, and warns when given an aware datetime.
+    xs.append(datetime.datetime.now())  # noqa: DTZ005
     # Append a random number (normal distribution)
     ys.append(random.gauss(0.5, 1.0))
 

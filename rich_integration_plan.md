@@ -35,7 +35,7 @@ mandatory dependencies).
 
 ```python
 if options.line_length_hard_cap is not None:
-    options.reset_width()                       # idempotent: resets to initial width first
+    options.reset_width()  # idempotent: resets to initial width first
     max_y_label_length = max(len(ls) for ls in y_axis_labels)
     if 2 + options.width + 1 + max_y_label_length > options.line_length_hard_cap:
         options.width = options.line_length_hard_cap - (2 + 1 + max_y_label_length)
@@ -94,7 +94,7 @@ def _render_to_string(self, max_width: Optional[int] = None) -> str:
         return "\n".join(header + body)
     finally:
         self.options.line_length_hard_cap = saved_cap
-        self.options.reset_width()   # undo width mutation done by the cap logic
+        self.options.reset_width()  # undo width mutation done by the cap logic
 ```
 
 `plot_to_string()` / `histogram_to_string()` can optionally be refactored to use
@@ -118,8 +118,10 @@ def __rich_console__(self, console, options):
     # so no raw escape sequences leak into Rich output.
     yield Text.from_ansi(plot_string)
 
+
 def __rich_measure__(self, console, options):
     from rich.measure import Measurement
+
     plot_string = self._render_to_string(max_width=options.max_width)
     widths = [_visible_len(line) for line in plot_string.split("\n")]
     natural = max(widths) if widths else 0
@@ -234,7 +236,7 @@ from uniplot import plot_gen
 plot = plot_gen(ys=initial_data)
 with Live(plot, refresh_per_second=4) as live:
     while True:
-        new_data = consume()        # may arrive thousands of times per second
+        new_data = consume()  # may arrive thousands of times per second
         plot.set_data(ys=new_data)  # cheap, no printing
         # No explicit re-render needed — Live's own thread redraws at 4 fps.
 ```

@@ -1,7 +1,8 @@
+from functools import lru_cache
+from typing import Final
+
 import numpy as np
 from numpy.typing import NDArray
-from typing import Optional, Final
-from functools import lru_cache
 
 from uniplot.axis_labels.label_set import LabelSet
 
@@ -23,14 +24,14 @@ def extended_talbot_labels(
     unit_scaling: str = "",
     log: bool = False,
     verbose: bool = False,
-) -> Optional[LabelSet]:
+) -> LabelSet | None:
     """
     The following is based on the paper Talbot, J., Lin, S. & Hanrahan, P. An
     Extension of Wilkinson’s Algorithm for Positioning Tick Labels on Axes.
     IEEE T Vis Comput Gr 16, 1036–1043 (2010). We have further exteded the
     algorithm to account for the discrete nature of terminal output.
     """
-    result: Optional[LabelSet] = None
+    result: LabelSet | None = None
     best_score: float = -2.0
 
     data_range: float = x_max - x_min
@@ -136,7 +137,7 @@ def _compute_simplicity_score(labels: NDArray, i: int, j: int) -> float:
     """
     # Indicator variable that is one if zero is part of the labels, and zero otherwise
     # NOTE It might make sense to extend this to all gridline values, plus zero
-    v = int(any([abs(label) < 1e-6 for label in labels]))
+    v = int(any(abs(label) < 1e-6 for label in labels))
     return 1 - (i - 1) / (len(Q_VALUES) - 1) - j + v
 
 

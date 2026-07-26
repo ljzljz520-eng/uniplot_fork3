@@ -1,12 +1,11 @@
 from numpy.typing import NDArray
-from typing import List
 
+from uniplot import layer_factory
 from uniplot.options import Options
-import uniplot.layer_factory as layer_factory
 
 
 def assemble_scatter_plot(
-    xs: List[NDArray], ys: List[NDArray], options: Options
+    xs: list[NDArray], ys: list[NDArray], options: Options
 ) -> NDArray:
     """
     Assemble the graph surface for a scatter plot.
@@ -35,7 +34,7 @@ def assemble_scatter_plot(
 ###########
 
 
-def _merge_layers(character_layers: List[NDArray], options: Options) -> NDArray:
+def _merge_layers(character_layers: list[NDArray], options: Options) -> NDArray:
     merged_layer = layer_factory.blank_character_matrix(
         width=options.width, height=options.height
     )

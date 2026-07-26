@@ -1,7 +1,8 @@
 from functools import partial
+from time import time
 
 import numpy as np
-from time import time
+
 from uniplot import plot
 
 results_plot = partial(plot, character_set="ascii", color=False)

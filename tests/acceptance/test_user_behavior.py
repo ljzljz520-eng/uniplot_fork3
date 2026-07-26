@@ -2,13 +2,13 @@
 Smoke tests for the frontend.
 """
 
-import math
-import numpy as np
-from random import random
 import datetime
+import math
+from random import random
 
-from uniplot import plot, plot_to_string, plot_gen, histogram, histogram_to_string
+import numpy as np
 
+from uniplot import histogram, histogram_to_string, plot, plot_gen, plot_to_string
 
 ################
 # Testing plot #
@@ -143,8 +143,9 @@ def test_plotting_time_series_with_python_date_objects():
 
 
 def test_plotting_time_series_with_python_datetime_objects():
+    # Naive datetimes on purpose: that is what NumPy's `datetime64` supports.
     dates = [
-        datetime.datetime(year=2024, month=2, day=i, hour=10, minute=5)
+        datetime.datetime(year=2024, month=2, day=i, hour=10, minute=5)  # noqa: DTZ001
         for i in range(1, 5)
     ]
     plot(xs=dates, ys=[1, 2, 3, 2])

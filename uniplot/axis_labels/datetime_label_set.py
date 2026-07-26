@@ -1,7 +1,7 @@
 import re
+
 import numpy as np
 from numpy.typing import NDArray
-from typing import List
 
 from uniplot.axis_labels.label_set import LabelSet
 
@@ -42,7 +42,7 @@ class DatetimeLabelSet(LabelSet):
     # private #
     ###########
 
-    def _find_shortest_string_representation(self, labels=None) -> List[str]:
+    def _find_shortest_string_representation(self, labels=None) -> list[str]:
         """
         This method will find the shortest strings for datetime labels that
         give enough information.
@@ -57,7 +57,7 @@ class DatetimeLabelSet(LabelSet):
         # Remove day, and then month, if that is redundant (i.e. all labels
         # have a "-01" at the end)
         for _ in range(2):
-            if all([re.fullmatch(r"[\d-]+-01", s) for s in short_labels]):
+            if all(re.fullmatch(r"[\d-]+-01", s) for s in short_labels):
                 short_labels = [t[:-3] for t in short_labels]
             else:
                 break

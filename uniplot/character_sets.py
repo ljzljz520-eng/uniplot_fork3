@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import List, Final
+from typing import Final
 
-ASCII_CHARACTER_SET: Final[List[str]] = ["+", "x", "o", "*", "~", "."]
-UNICODE_CHARACTER_SET: Final[List[str]] = [
+ASCII_CHARACTER_SET: Final[list[str]] = ["+", "x", "o", "*", "~", "."]
+UNICODE_CHARACTER_SET: Final[list[str]] = [
     "",
     "▘",
     "▝",
@@ -20,7 +20,7 @@ UNICODE_CHARACTER_SET: Final[List[str]] = [
     "▟",
     "█",
 ]
-BRAILLE_CHARACTER_SET: Final[List[str]] = [
+BRAILLE_CHARACTER_SET: Final[list[str]] = [
     "",
     "⠁",
     "⠈",

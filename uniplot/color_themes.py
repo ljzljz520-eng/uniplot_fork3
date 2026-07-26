@@ -1,4 +1,5 @@
 from typing import Final
+
 from uniplot.colors import ANSI_COLOR_CODES, Color
 
 # Tableu default colors

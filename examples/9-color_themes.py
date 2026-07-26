@@ -5,7 +5,7 @@ NR_LINES = 10
 xs = [[i, i + NR_LINES] for i in range(NR_LINES)]
 ys = [[0, 1] for _ in range(NR_LINES)]
 
-for theme in COLOR_THEMES.keys():
+for theme in COLOR_THEMES:
     print()
     plot(
         xs=xs,

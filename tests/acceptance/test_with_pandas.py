@@ -3,8 +3,8 @@ Plotting with pandas is such a common use case in data science that we want to
 make sure it works nicely with uniplot. Thus these tests.
 """
 
-import pandas as pd  # type: ignore
 import numpy as np
+import pandas as pd  # type: ignore
 
 from uniplot import plot
 
