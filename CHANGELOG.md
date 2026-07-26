@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- SI unit prefixes for axis labels via the new `x_unit_as_si` / `y_unit_as_si`
-  options. When enabled, values are assumed to be in the base unit given by
-  `x_unit` / `y_unit` and labels are rendered with the appropriate SI prefix
-  (e.g. a label of `1000` with unit `" m"` becomes `1 km`, `0.003` becomes
-  `3 mm`). The prefix is inserted before the first non-whitespace character of
+- Unit scaling for axis labels via the new `x_unit_scaling` / `y_unit_scaling`
+  options, assuming `x_unit` / `y_unit` is the base unit. Currently supports
+  `"si"` (SI prefixes; more modes may follow). When set to `"si"`, labels are
+  rendered with the appropriate SI prefix (e.g. a label of `1000` with unit
+  `" m"` becomes `1 km`, `0.003` becomes `3 mm`). The prefix is inserted before
+  the first non-whitespace character of
   the unit, so a leading space is preserved; a blank unit still gets a prefix
   (e.g. `200k`). On linear axes a single prefix is chosen for the whole axis,
   anchored to the smallest nonzero label so that no label drops below 1 in the

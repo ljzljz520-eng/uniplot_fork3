@@ -21,9 +21,9 @@ class DatetimeLabelSet(LabelSet):
         log: bool = False,
         vertical_direction: bool = False,
     ):
-        # Note: SI unit prefixes (`unit_as_si`) do not apply to timestamps, so
+        # Note: unit scaling (`unit_scaling`) does not apply to timestamps, so
         # this class intentionally does not expose that option and lets the base
-        # class default it to `False`.
+        # class default it to off.
         super().__init__(
             labels,
             x_min,

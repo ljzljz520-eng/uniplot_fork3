@@ -33,6 +33,11 @@ SI_PREFIXES = {
     8: "Y",  # yotta
 }
 
+# Supported values of the `unit_scaling` option. "" disables scaling; "si" uses
+# SI prefixes (see `SI_PREFIXES`). More modes may be added in the future (see
+# `plans/unit-scaling-modes.md`).
+VALID_UNIT_SCALINGS = frozenset({"", "si"})
+
 
 class LabelSet:
     """
@@ -48,7 +53,7 @@ class LabelSet:
         x_max: float = 1.0,
         available_space: int = 17,
         unit: str = "",
-        unit_as_si: bool = False,
+        unit_scaling: str = "",
         log: bool = False,
         vertical_direction: bool = False,
     ):
@@ -56,7 +61,7 @@ class LabelSet:
         self.x_min = x_min
         self.x_max = x_max
         self.unit = unit
-        self.unit_as_si = unit_as_si
+        self.unit_scaling = unit_scaling
         self.log = log
         self.available_space = available_space
         self.vertical_direction = vertical_direction
@@ -230,7 +235,7 @@ class LabelSet:
         A blank unit is allowed: SI prefixes are still applied, so e.g. a value
         of 200,000 renders as "200k".
         """
-        if not self.unit_as_si:
+        if self.unit_scaling != "si":
             return 1.0, ""
 
         finite = self.labels[np.isfinite(self.labels.astype(float))]
@@ -285,7 +290,7 @@ class LabelSet:
         """
         prefix = ""
         scaled = value
-        if self.unit_as_si:
+        if self.unit_scaling == "si":
             group = self._si_group(value)
             # Skip the prefix if the value is beyond the known range (below
             # yocto or above yotta) and fall back to plain formatting.

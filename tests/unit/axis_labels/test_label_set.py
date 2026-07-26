@@ -48,7 +48,7 @@ def test_si_units_scale_up_to_kilo():
         x_max=4100.0,
         available_space=40,
         unit="m",
-        unit_as_si=True,
+        unit_scaling="si",
         vertical_direction=False,
     )
     render = ls.render()[0]
@@ -64,7 +64,7 @@ def test_si_units_scale_down_to_milli():
         x_max=0.0041,
         available_space=40,
         unit="m",
-        unit_as_si=True,
+        unit_scaling="si",
         vertical_direction=False,
     )
     render = ls.render()[0]
@@ -80,7 +80,7 @@ def test_si_units_stay_in_base_below_kilo():
         x_max=410.0,
         available_space=40,
         unit="m",
-        unit_as_si=True,
+        unit_scaling="si",
         vertical_direction=False,
     )
     render = ls.render()[0]
@@ -113,7 +113,7 @@ def test_si_prefix_applied_even_with_blank_unit():
         x_max=210_000.0,
         available_space=40,
         unit="",
-        unit_as_si=True,
+        unit_scaling="si",
         vertical_direction=False,
     )
     render = ls.render()[0]
@@ -130,7 +130,7 @@ def test_si_prefix_inserted_before_first_non_whitespace_of_unit():
         x_max=4100.0,
         available_space=40,
         unit=" m",
-        unit_as_si=True,
+        unit_scaling="si",
         vertical_direction=False,
     )
     render = ls.render()[0]
@@ -166,7 +166,7 @@ def _si_label_strings(labels, unit="g", log=False):
         x_max=hi + pad,
         available_space=60,
         unit=unit,
-        unit_as_si=True,
+        unit_scaling="si",
         log=log,
         vertical_direction=False,
     )
@@ -247,11 +247,11 @@ def test_si_log_axis_spans_many_decades_with_per_label_prefix():
 def test_si_uses_extreme_prefixes_at_the_edges_of_the_known_range():
     # Yotta (10^24) and yocto (10^-24) are the largest/smallest known prefixes.
     yotta = LabelSet(
-        np.array([1e24]), unit="m", unit_as_si=True, vertical_direction=False
+        np.array([1e24]), unit="m", unit_scaling="si", vertical_direction=False
     )
     assert yotta._si_divisor_and_prefix() == (1e24, "Y")
     yocto = LabelSet(
-        np.array([1e-24]), unit="m", unit_as_si=True, vertical_direction=False
+        np.array([1e-24]), unit="m", unit_scaling="si", vertical_direction=False
     )
     assert yocto._si_divisor_and_prefix() == (1e-24, "y")
 
@@ -263,7 +263,7 @@ def test_si_linear_falls_back_to_plain_above_known_range():
         x_min=0.9e27,
         x_max=2.1e27,
         unit="m",
-        unit_as_si=True,
+        unit_scaling="si",
         vertical_direction=False,
     )
     assert ls._si_divisor_and_prefix() == (1.0, "")
@@ -276,7 +276,7 @@ def test_si_linear_falls_back_to_plain_below_known_range():
         x_min=0.9e-25,
         x_max=2.1e-25,
         unit="m",
-        unit_as_si=True,
+        unit_scaling="si",
         vertical_direction=False,
     )
     assert ls._si_divisor_and_prefix() == (1.0, "")
@@ -285,7 +285,7 @@ def test_si_linear_falls_back_to_plain_below_known_range():
 def test_si_log_per_label_falls_back_to_plain_outside_known_range():
     # Use "s" as the unit since (unlike "m") it is not also an SI prefix letter,
     # so we can safely check that no prefix leaked into the output.
-    ls = LabelSet(np.array([1.0]), unit="s", unit_as_si=True)
+    ls = LabelSet(np.array([1.0]), unit="s", unit_scaling="si")
     # In range: prefixes are used.
     assert ls._format_value_si(1e24) == "1Ys"
     assert ls._format_value_si(1e-24) == "1ys"
@@ -338,7 +338,7 @@ def test_log_axis_uses_per_label_si_prefix():
         x_max=3.1,
         available_space=60,
         unit="m",
-        unit_as_si=True,
+        unit_scaling="si",
         log=True,
         vertical_direction=False,
     )

@@ -7,6 +7,7 @@ from uniplot.conversions import floatify
 from uniplot.colors import Color
 from uniplot.color_themes import COLOR_THEMES
 from uniplot.legend_placements import LegendPlacement
+from uniplot.axis_labels.label_set import VALID_UNIT_SCALINGS
 
 AUTO_WINDOW_ENLARGE_FACTOR = 0.001
 
@@ -103,6 +104,18 @@ def validate_and_transform_options(
     for key in ["title", "x_unit", "y_unit"]:
         if key in kwargs:
             kwargs[key] = str(kwargs[key])
+
+    # Normalize and validate unit scaling options
+    for key in ["x_unit_scaling", "y_unit_scaling"]:
+        if key in kwargs:
+            value = str(kwargs[key]).strip().lower()
+            if value not in VALID_UNIT_SCALINGS:
+                valid = ", ".join(repr(v) for v in sorted(VALID_UNIT_SCALINGS))
+                raise ValueError(
+                    f"Invalid '{key}' option: {kwargs[key]!r}. "
+                    f"Valid values are: {valid}."
+                )
+            kwargs[key] = value
     if kwargs.get("legend_labels") is not None:
         kwargs["legend_labels"] = [
             # Make sure the length of the labels is not exceeding the number of
