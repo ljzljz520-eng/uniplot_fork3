@@ -145,20 +145,12 @@ In alphabetical order:
   data points.
 * `x_unit` - Unit of the x axis. This is a string that is appended to the axis
   labels. Defaults to `""`.
-* `x_unit_scaling` - Scale the x axis labels, assuming `x_unit` is the base
-  unit. Supported values are `""` (no scaling) and `"si"` (SI prefixes `k`, `M`,
-  `G`, … and `m`, `µ`, `n`, …). For example, with `x_unit=" m"` a label of `1000`
-  is shown as `1 km` and `0.003` as `3 mm`. The prefix is inserted before the
-  first non-whitespace character of the unit (so a leading space is preserved),
-  and a blank unit still gets a prefix (e.g. `200k`). Defaults to `""`.
 * `y_max` - Maximum y value of the view. Defaults to a value that shows all
   data points.
 * `y_min` - Minimum y value of the view. Defaults to a value that shows all
   data points.
 * `y_unit` - Unit of the y axis. This is a string that is appended to the axis
   labels. Defaults to `""`.
-* `y_unit_scaling` - Scale the y axis labels, assuming `y_unit` is the base
-  unit. See `x_unit_scaling`. Defaults to `""`.
 
 #### Advanced options
 
@@ -184,12 +176,20 @@ In alphabetical order:
 * `x_gridlines_color` - A boolean or a list of colors for the vertical
   gridlines, as specified above for the `color` option. Defaults to `False`.
 * `x_labels` - Enable axis labels for the x axis. Defaults to `True`.
+* `x_unit_scaling` - Scale the x axis labels, assuming `x_unit` is the base
+  unit. Supported values are `""` (no scaling) and `"si"` (SI prefixes `k`, `M`,
+  `G`, … and `m`, `µ`, `n`, …). For example, with `x_unit=" m"` a label of `1000`
+  is shown as `1 km` and `0.003` as `3 mm`. The prefix is inserted before the
+  first non-whitespace character of the unit (so a leading space is preserved),
+  and a blank unit still gets a prefix (e.g. `200k`). Defaults to `""`.
 * `y_as_log` - Plot the y axis as logarithmic scale. Defaults to `False`.
 * `y_gridlines` - A list of y values that have a horizontal line for better
   orientation. Defaults to `[0]`, or to `[]` if `y_as_log` is enabled.
 * `y_gridlines_color` - A boolean or a list of colors for the horizontal
   gridlines, as specified above for the `color` option. Defaults to `False`.
 * `y_labels` - Enable axis labels for the y axis. Defaults to `True`.
+* `y_unit_scaling` - Scale the y axis labels, assuming `y_unit` is the base
+  unit. See `x_unit_scaling`. Defaults to `""`.
 
 
 ### Changing default parameters
