@@ -40,6 +40,10 @@ class Options:
     legend_labels: list[str] | None = None
     # Legend placement
     legend_placement: LegendPlacement = LegendPlacement.AUTO
+    # User-supplied overlay layers (bands, markers, annotations, custom
+    # `PlotLayer` instances). They share the plot's data coordinates and are
+    # merged with the gridlines and data points according to their `z_order`.
+    layers: list = field(default_factory=list)
     # Draw lines between points
     lines: list[bool] = field(default_factory=_default_lines)
     # Enforce a hard limit on the number of characters per line. This may
